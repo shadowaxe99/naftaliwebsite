@@ -129,7 +129,7 @@ export default function App() {
           >
             <Search size={14} />
             <span>Search</span>
-            <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border border-neutral-200 shadow-sm ml-2">âK</kbd>
+            <kbd className="font-mono bg-white px-1.5 py-0.5 rounded border border-neutral-200 shadow-sm ml-2">⌘K</kbd>
           </button>
           <a href="#contact" className="px-5 py-2 bg-neutral-900 text-white text-sm font-medium rounded-full hover:bg-neutral-800 transition-colors shadow-sm">
             Contact
@@ -185,7 +185,7 @@ export default function App() {
                   <Phone size={16} className="text-neutral-500" /> <span>Copy Phone Number</span>
                 </button>
                 <button onClick={() => { setCmdOpen(false); alert('Resume download initiated.'); }} className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-neutral-100 rounded-xl text-sm text-left transition-colors">
-                  <Download size={16} className="text-neutral-500" /> <span>Download RÃ©sumÃ©</span>
+                  <Download size={16} className="text-neutral-500" /> <span>Download Résumé</span>
                 </button>
               </div>
             </motion.div>
