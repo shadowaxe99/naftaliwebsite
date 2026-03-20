@@ -292,26 +292,43 @@ export default function App() {
               {/* Box 2: Japanese IP */}
               <div className="bg-neutral-900 text-white rounded-3xl p-8 md:p-10 shadow-lg relative overflow-hidden group">
                 <div className="absolute inset-0 bg-gradient-to-br from-neutral-800 to-neutral-900 opacity-50"></div>
-                <div className="relative z-10 h-full flex flex-col justify-between">
-                  <Globe className="w-10 h-10 text-white/80 mb-6 group-hover:scale-110 transition-transform duration-500" />
-                  <div>
-                    <h3 className="text-xl font-medium mb-3">Japanese IP Focus</h3>
-                    <p className="text-white/70 text-sm leading-relaxed">
-                      Currently learning Japanese to bridge the language gap and specialize in Japanese intellectual property within the entertainment sector.
-                    </p>
+                
+                {/* Decorative background element */}
+                <div className="absolute top-0 right-8 bottom-0 flex items-center opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none select-none">
+                  <div className="text-8xl md:text-[120px] font-black tracking-widest" style={{ writingMode: 'vertical-rl' }}>
+                    知的財産
                   </div>
+                </div>
+
+                <div className="relative z-10 h-full flex flex-col justify-end">
+                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm border border-white/10 group-hover:scale-110 transition-transform duration-500">
+                    <Globe className="w-6 h-6 text-white" />
+                  </div>
+                  <h3 className="text-2xl font-serif font-medium mb-3">Japanese IP Focus</h3>
+                  <p className="text-white/70 text-sm leading-relaxed">
+                    Currently learning Japanese to bridge the language gap and specialize in Japanese intellectual property within the entertainment sector.
+                  </p>
                 </div>
               </div>
 
               {/* Box 3: NYLS */}
-              <div className="bg-white border border-neutral-200 rounded-3xl p-8 md:p-10 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-                <GraduationCap className="w-10 h-10 text-neutral-900 mb-6" />
-                <div>
-                  <div className="inline-block px-2.5 py-1 bg-neutral-100 text-neutral-600 text-xs font-bold rounded mb-3">FALL 2026</div>
-                  <h3 className="text-xl font-medium mb-2">New York Law School</h3>
-                  <p className="text-neutral-600 text-sm leading-relaxed">
-                    Attending the J.D. program, building upon a foundation of rigorous textual analysis and complex legal frameworks.
-                  </p>
+              <div className="bg-white border border-neutral-200 rounded-3xl p-8 md:p-10 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                {/* Decorative background element */}
+                <div className="absolute -right-12 -top-12 text-neutral-50 opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none select-none">
+                  <GraduationCap size={240} strokeWidth={1} />
+                </div>
+
+                <div className="relative z-10 h-full flex flex-col justify-end">
+                  <div className="w-12 h-12 bg-neutral-100 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500">
+                    <GraduationCap className="w-6 h-6 text-neutral-900" />
+                  </div>
+                  <div>
+                    <div className="inline-block px-2.5 py-1 bg-neutral-100 text-neutral-600 text-xs font-bold rounded mb-3">FALL 2026</div>
+                    <h3 className="text-2xl font-serif font-medium mb-3">New York Law School</h3>
+                    <p className="text-neutral-600 text-sm leading-relaxed">
+                      Attending the J.D. program, building upon a foundation of rigorous textual analysis and complex legal frameworks.
+                    </p>
+                  </div>
                 </div>
               </div>
 
