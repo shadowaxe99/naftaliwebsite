@@ -18,8 +18,8 @@ export default function LockScreen({ onAuthenticate }: { onAuthenticate: () => v
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     
-    // Compare with the pre-computed hash of "DittoorQuag?"
-    if (hashHex === 'e0311e81b4c1db71cd20894d36db2186f33052868ad91b7121885a49935102e0') {
+    // Compare with the pre-computed hash of "admin"
+    if (hashHex === '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918') {
       onAuthenticate();
     } else {
       setPasswordError(true);
