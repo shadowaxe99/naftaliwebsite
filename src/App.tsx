@@ -3,7 +3,7 @@ import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
 import { 
   BookOpen, Briefcase, GraduationCap, Mail, MapPin, Phone, Globe, 
   Mic, PenTool, ChevronRight, Command, Search, Copy, Check, 
-  Download, ArrowUpRight, Terminal, Database, Code
+  Download, ArrowUpRight, Terminal, Database, Code, Lock
 } from 'lucide-react';
 
 // --- Components ---
@@ -42,6 +42,9 @@ function CopyButton({ text, label, icon: Icon }: { text: string, label: string, 
 // --- Main App ---
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [passwordInput, setPasswordInput] = useState('');
+  const [passwordError, setPasswordError] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +59,7 @@ export default function App() {
 
   // Cmd+K Listener
   useEffect(() => {
+    if (!isAuthenticated) return;
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -64,7 +68,7 @@ export default function App() {
     };
     document.addEventListener('keydown', down);
     return () => document.removeEventListener('keydown', down);
-  }, []);
+  }, [isAuthenticated]);
 
   // Focus input when Cmd+K opens
   useEffect(() => {
@@ -74,6 +78,17 @@ export default function App() {
       setSearchQuery('');
     }
   }, [cmdOpen]);
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordInput === 'DittoorQuag?') {
+      setIsAuthenticated(true);
+      setPasswordError(false);
+    } else {
+      setPasswordError(true);
+      setPasswordInput('');
+    }
+  };
 
   // Animations
   const fadeIn = {
@@ -95,6 +110,55 @@ export default function App() {
     navigator.clipboard.writeText(text);
     setCmdOpen(false);
   };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#171717] flex items-center justify-center p-6 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className="w-full max-w-md bg-[#1f1f1f] border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl relative z-10"
+        >
+          <div className="flex justify-center mb-8">
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner">
+              <Lock className="text-white/80" size={28} />
+            </div>
+          </div>
+          <div className="text-center mb-8">
+            <h1 className="text-2xl font-serif text-white font-medium mb-2">Coming Soon</h1>
+            <p className="text-white/50 text-sm font-light">This portfolio is currently under construction. Please enter the password to view the preview.</p>
+          </div>
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div>
+              <input
+                type="password"
+                value={passwordInput}
+                onChange={(e) => {
+                  setPasswordInput(e.target.value);
+                  setPasswordError(false);
+                }}
+                placeholder="Enter password"
+                className={`w-full bg-black/20 border ${passwordError ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-white/30'} rounded-xl px-4 py-3 text-white placeholder:text-white/30 outline-none transition-colors text-center tracking-widest font-mono`}
+              />
+              {passwordError && (
+                <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs text-center mt-2 font-medium">
+                  Incorrect password. Please try again.
+                </motion.p>
+              )}
+            </div>
+            <button 
+              type="submit"
+              className="w-full bg-white text-black font-medium rounded-xl px-4 py-3 hover:bg-neutral-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+            >
+              Enter Site
+            </button>
+          </form>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fafafa] text-neutral-900 selection:bg-neutral-900 selection:text-white relative">
