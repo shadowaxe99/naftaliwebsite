@@ -5,6 +5,8 @@ import {
   Mic, PenTool, ChevronRight, Command, Search, Copy, Check, 
   Download, ArrowUpRight, Terminal, Database, Code, Lock
 } from 'lucide-react';
+import LockScreen from './components/LockScreen';
+import ArcadeCard from './components/ArcadeCard';
 
 // --- Components ---
 
@@ -43,8 +45,6 @@ function CopyButton({ text, label, icon: Icon }: { text: string, label: string, 
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [passwordInput, setPasswordInput] = useState('');
-  const [passwordError, setPasswordError] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -79,17 +79,6 @@ export default function App() {
     }
   }, [cmdOpen]);
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwordInput === 'DittoorQuag?') {
-      setIsAuthenticated(true);
-      setPasswordError(false);
-    } else {
-      setPasswordError(true);
-      setPasswordInput('');
-    }
-  };
-
   // Animations
   const fadeIn = {
     initial: { opacity: 0, y: 20 },
@@ -112,56 +101,12 @@ export default function App() {
   };
 
   if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-[#171717] flex items-center justify-center p-6 relative overflow-hidden">
-        <div className="absolute inset-0 bg-grid-pattern opacity-10 pointer-events-none" />
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
-          className="w-full max-w-md bg-[#1f1f1f] border border-white/10 rounded-3xl p-8 md:p-10 shadow-2xl relative z-10"
-        >
-          <div className="flex justify-center mb-8">
-            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner">
-              <Lock className="text-white/80" size={28} />
-            </div>
-          </div>
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-serif text-white font-medium mb-2">Coming Soon</h1>
-            <p className="text-white/50 text-sm font-light">This portfolio is currently under construction. Please enter the password to view the preview.</p>
-          </div>
-          <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div>
-              <input
-                type="password"
-                value={passwordInput}
-                onChange={(e) => {
-                  setPasswordInput(e.target.value);
-                  setPasswordError(false);
-                }}
-                placeholder="Enter password"
-                className={`w-full bg-black/20 border ${passwordError ? 'border-red-500/50 focus:border-red-500' : 'border-white/10 focus:border-white/30'} rounded-xl px-4 py-3 text-white placeholder:text-white/30 outline-none transition-colors text-center tracking-widest font-mono`}
-              />
-              {passwordError && (
-                <motion.p initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} className="text-red-400 text-xs text-center mt-2 font-medium">
-                  Incorrect password. Please try again.
-                </motion.p>
-              )}
-            </div>
-            <button 
-              type="submit"
-              className="w-full bg-white text-black font-medium rounded-xl px-4 py-3 hover:bg-neutral-200 transition-colors shadow-[0_0_20px_rgba(255,255,255,0.1)]"
-            >
-              Enter Site
-            </button>
-          </form>
-        </motion.div>
-      </div>
-    );
+    return <LockScreen onAuthenticate={() => setIsAuthenticated(true)} />;
   }
 
   return (
     <div className="min-h-screen bg-[#fafafa] text-neutral-900 selection:bg-neutral-900 selection:text-white relative">
+      <div className="film-grain" />
       
       {/* Scroll Progress Bar */}
       <motion.div 
@@ -284,7 +229,31 @@ export default function App() {
                 <Command size={18} /> Command Menu
               </button>
             </motion.div>
+
+            {/* Vertical Japanese Accent */}
+            <motion.div 
+              variants={fadeIn}
+              className="absolute right-6 md:right-12 top-1/2 -translate-y-1/2 hidden lg:block"
+            >
+              <div className="vertical-text text-neutral-300 font-bold text-4xl tracking-[0.5em] uppercase opacity-50 mix-blend-multiply">
+                著作権と商標法
+              </div>
+            </motion.div>
           </motion.section>
+
+          {/* Cinematic Marquee */}
+          <motion.div 
+            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
+            className="w-screen relative left-1/2 -translate-x-1/2 bg-neutral-900 text-white py-5 mb-24 overflow-hidden flex shadow-2xl"
+          >
+            <div className="animate-marquee whitespace-nowrap flex items-center">
+              {[...Array(4)].map((_, i) => (
+                <span key={i} className="mx-4 text-sm font-mono tracking-widest uppercase flex items-center">
+                  Entertainment Law <span className="text-[#E50000] mx-6">✦</span> Intellectual Property <span className="text-[#E50000] mx-6">✦</span> Japanese Media <span className="text-[#E50000] mx-6">✦</span> Copyright & Trademark <span className="text-[#E50000] mx-6">✦</span>
+                </span>
+              ))}
+            </div>
+          </motion.div>
 
           {/* Bento Grid About Section */}
           <motion.section 
@@ -292,9 +261,12 @@ export default function App() {
             className="py-24"
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.8 }}
           >
-            <div className="mb-12">
-              <h2 className="text-3xl font-serif font-medium mb-2">About Me</h2>
-              <p className="text-neutral-500 text-sm uppercase tracking-widest font-semibold">Advocacy & Expertise</p>
+            <div className="mb-12 flex items-end gap-4">
+              <div>
+                <h2 className="text-3xl font-serif font-medium mb-2">About Me</h2>
+                <p className="text-neutral-500 text-sm uppercase tracking-widest font-semibold">Advocacy & Expertise</p>
+              </div>
+              <div className="text-neutral-300 font-bold text-2xl mb-1 hidden sm:block">私について</div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -376,15 +348,15 @@ export default function App() {
           >
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
               <div className="lg:col-span-4">
-                <h2 className="text-3xl font-serif font-medium mb-4">Experience</h2>
-                <p className="text-neutral-500 text-sm uppercase tracking-widest font-semibold">Professional & Academic</p>
+                <h2 className="text-3xl font-serif font-medium mb-2">Experience</h2>
+                <p className="text-neutral-500 text-sm uppercase tracking-widest font-semibold mb-4">Professional & Academic</p>
+                <div className="text-neutral-300 font-bold text-4xl mt-8 hidden lg:block">経歴</div>
               </div>
               <div className="lg:col-span-8">
                 <div className="space-y-12">
                   
                   {[
                     { title: "New York Law School", date: "Fall 2026", role: "Juris Doctor (J.D.) Candidate", loc: "", desc: "" },
-                    { title: "Ateret Torah Middle School", date: "2025 – 2026", role: "Language Arts Teacher", loc: "Brooklyn, NY", desc: "Taught English language arts to two full sections of middle school students with diverse learning needs. Designed tailored curriculum integrating literature, composition, and language mechanics." },
                     { title: "BrandWhatever", date: "Summer 2024", role: "Design Intern", loc: "Brooklyn, NY", desc: "Collaborated with senior design staff to produce digital and print advertising materials. Gained proficiency in AI technologies by training Stable Diffusion models for creative asset generation." },
                     { title: "Yeshiva Pirchei Shoshanim", date: "2022 – 2024", role: "Rabbinic Ordination", loc: "Lakewood, NJ", desc: "Intensive graduate-level study of Jewish law involving rigorous textual analysis and application of complex legal frameworks." },
                     { title: "Excelsior University", date: "2021 – 2024", role: "Bachelor of Liberal Arts", loc: "Albany, NY", desc: "Recipient of the U.S. Presidential Academic Excellence Award." },
@@ -412,9 +384,12 @@ export default function App() {
             className="py-24 border-t border-neutral-200"
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.8 }}
           >
-            <div className="mb-16">
-              <h2 className="text-3xl font-serif font-medium mb-4">Creative Projects</h2>
-              <p className="text-neutral-500 text-sm uppercase tracking-widest font-semibold">Writing & Media</p>
+            <div className="mb-16 flex items-end gap-4">
+              <div>
+                <h2 className="text-3xl font-serif font-medium mb-2">Creative Projects</h2>
+                <p className="text-neutral-500 text-sm uppercase tracking-widest font-semibold">Writing & Media</p>
+              </div>
+              <div className="text-neutral-300 font-bold text-2xl mb-1 hidden sm:block">創作活動</div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -465,6 +440,21 @@ export default function App() {
                   Contributed vocal performances to various digital media projects, reaching a global audience of over 14 million viewers.
                 </p>
               </div>
+
+              {/* Arcade Card */}
+              <div className="col-span-1 md:col-span-2 mt-8">
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h3 className="text-2xl font-serif font-medium mb-1">Interactive Playground</h3>
+                    <p className="text-neutral-500 text-sm">A custom HTML5 canvas experience. Take a break and play.</p>
+                  </div>
+                  <div className="hidden sm:flex gap-2">
+                    <span className="px-3 py-1 bg-neutral-100 text-neutral-500 text-xs font-mono rounded-full">TypeScript</span>
+                    <span className="px-3 py-1 bg-neutral-100 text-neutral-500 text-xs font-mono rounded-full">Canvas API</span>
+                  </div>
+                </div>
+                <ArcadeCard />
+              </div>
             </div>
           </motion.section>
 
@@ -477,6 +467,7 @@ export default function App() {
             <div className="bg-neutral-50 border border-neutral-200 rounded-[2.5rem] p-8 md:p-16 text-center max-w-4xl mx-auto relative overflow-hidden">
               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-neutral-300 to-transparent opacity-50"></div>
               
+              <div className="text-neutral-300 font-bold text-2xl mb-4">連絡先</div>
               <h2 className="text-4xl md:text-5xl font-serif font-medium mb-6">Let's Connect</h2>
               <p className="text-neutral-600 text-lg font-light mb-12 max-w-2xl mx-auto">
                 Whether you're interested in discussing intellectual property law, creative projects, or opportunities in the entertainment sector, I'd love to hear from you.

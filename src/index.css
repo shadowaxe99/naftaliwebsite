@@ -66,9 +66,37 @@ h1, h2, h3, h4, h5, h6 {
   -webkit-backdrop-filter: blur(4px);
 }
 
-/* Custom Cursor Hiding */
+/* Custom Cursor */
 @media (hover: hover) and (pointer: fine) {
   body, a, button, input, [role="button"] {
-    cursor: none !important;
+    cursor: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 3L10.07 19.97L13.58 13.58L19.97 10.07L3 3Z' fill='%23E50000' stroke='white' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 3 3, auto !important;
   }
+  a:hover, button:hover, input:hover, [role="button"]:hover {
+    cursor: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 3L10.07 19.97L13.58 13.58L19.97 10.07L3 3Z' fill='%23E50000' stroke='white' stroke-width='1.5' stroke-linejoin='round'/%3E%3Ccircle cx='13.58' cy='13.58' r='3' fill='white'/%3E%3C/svg%3E") 3 3, pointer !important;
+  }
+}
+
+/* Cinematic Additions */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 25s linear infinite;
+  width: max-content;
+}
+.film-grain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+.vertical-text {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
 }
