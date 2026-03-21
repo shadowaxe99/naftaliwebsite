@@ -5,6 +5,7 @@ import {
   Mic, PenTool, ChevronRight, Command, Search, Copy, Check, 
   Download, ArrowUpRight, Terminal, Database, Code, Lock
 } from 'lucide-react';
+import { Analytics } from "@vercel/analytics/react";
 import LockScreen from './components/LockScreen';
 import ArcadeCard from './components/ArcadeCard';
 
@@ -515,6 +516,7 @@ export default function App() {
         <p>&copy; {new Date().getFullYear()} Nathan Gruen. All rights reserved.</p>
         <p className="mt-2 text-xs font-mono">J.D. Candidate &middot; Author &middot; Creative Consultant</p>
       </footer>
+      <Analytics />
     </div>
   );
 }
