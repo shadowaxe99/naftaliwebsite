@@ -35,7 +35,7 @@ export default function ArcadeCard() {
   const [showInfo, setShowInfo] = useState<string | null>(null);
 
   const getNavBtnClass = (type: GameType | 'card') => {
-    const isLightBg = ['bonsai', 'zen'].includes(gameType);
+    const isLightBg = ['bonsai', 'zen', 'sakura'].includes(gameType);
     const isActive = type === 'card' ? cardGames.some(g => g.type === gameType) : gameType === type;
     
     if (isActive) {
@@ -169,7 +169,7 @@ export default function ArcadeCard() {
             </button>
             <button 
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${soundEnabled ? 'bg-emerald-500/80 text-white' : (['bonsai', 'zen'].includes(gameType) ? 'bg-black/5 text-black hover:bg-black/10' : 'bg-white/10 text-white hover:bg-white/20')} flex items-center gap-1.5 ml-2`}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${soundEnabled ? 'bg-emerald-500/80 text-white' : (['bonsai', 'zen', 'sakura'].includes(gameType) ? 'bg-black/5 text-black hover:bg-black/10' : 'bg-white/10 text-white hover:bg-white/20')} flex items-center gap-1.5 ml-2`}
             >
               {soundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />} Sound
             </button>
