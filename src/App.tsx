@@ -107,8 +107,13 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fafafa] text-neutral-900 selection:bg-neutral-900 selection:text-white relative">
-      <div className="film-grain" />
+    <div className="min-h-screen bg-[#fdfdfc] text-neutral-900 selection:bg-neutral-900 selection:text-white relative overflow-x-hidden">
+      {/* Subtle background gradients */}
+      <div className="absolute top-0 left-0 w-full h-[800px] bg-gradient-to-b from-neutral-100 to-transparent pointer-events-none z-0" />
+      <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-50/40 rounded-full blur-3xl pointer-events-none z-0" />
+      <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-emerald-50/40 rounded-full blur-3xl pointer-events-none z-0" />
+      
+      <div className="film-grain z-50 pointer-events-none" />
       
       {/* Scroll Progress Bar */}
       <motion.div 

@@ -2,8 +2,15 @@ import { useEffect, useRef } from 'react';
 
 export type GameType = 'brick' | 'galaga' | 'zen' | 'koi' | 'sakura' | 'tetris' | 'lanterns' | 'bonsai' | 'hanafuda' | 'karuta' | 'menko';
 
-export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
+let globalAudioCtx: AudioContext | null = null;
+
+export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabled: boolean = false) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const soundEnabledRef = useRef(soundEnabled);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -14,6 +21,154 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
 
     let animationFrameId: number;
     let isRunning = true;
+
+    // --- Audio System ---
+    const initAudio = () => {
+      if (!soundEnabledRef.current) return;
+      if (!globalAudioCtx) {
+        const AC = window.AudioContext || (window as any).webkitAudioContext;
+        if (AC) globalAudioCtx = new AC();
+      }
+      if (globalAudioCtx && globalAudioCtx.state === 'suspended') globalAudioCtx.resume();
+    };
+
+    const playTone = (freq: number, type: OscillatorType, duration: number, vol: number = 0.1) => {
+      if (!soundEnabledRef.current) return;
+      initAudio();
+      if (!globalAudioCtx) return;
+      try {
+        const osc = globalAudioCtx.createOscillator();
+        const gain = globalAudioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, globalAudioCtx.currentTime);
+        gain.gain.setValueAtTime(vol, globalAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, globalAudioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(globalAudioCtx.destination);
+        osc.start();
+        osc.stop(globalAudioCtx.currentTime + duration);
+      } catch(e) {}
+    };
+
+    const playNoise = (duration: number, vol: number = 0.1) => {
+      if (!soundEnabledRef.current) return;
+      initAudio();
+      if (!globalAudioCtx) return;
+      try {
+        const bufferSize = globalAudioCtx.sampleRate * duration;
+        const buffer = globalAudioCtx.createBuffer(1, bufferSize, globalAudioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = Math.random() * 2 - 1;
+        }
+        const noise = globalAudioCtx.createBufferSource();
+        noise.buffer = buffer;
+        const gain = globalAudioCtx.createGain();
+        gain.gain.setValueAtTime(vol, globalAudioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, globalAudioCtx.currentTime + duration);
+        noise.connect(gain);
+        gain.connect(globalAudioCtx.destination);
+        noise.start();
+      } catch(e) {}
+    };
+
+    const speakWord = (text: string) => {
+      if (!soundEnabledRef.current) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'ja-JP';
+      utterance.rate = 0.8;
+      window.speechSynthesis.speak(utterance);
+    };
+
+    let ambientGain: GainNode | null = null;
+    let ambientOsc1: OscillatorNode | null = null;
+    let ambientOsc2: OscillatorNode | null = null;
+    let ambientNoise: AudioBufferSourceNode | null = null;
+    let ambientFilter: BiquadFilterNode | null = null;
+    let isStoppingAmbient = false;
+
+    const manageAmbientSound = () => {
+      if (!soundEnabledRef.current || !['zen', 'koi', 'sakura', 'lanterns', 'bonsai', 'hanafuda'].includes(gameType)) {
+        if (ambientGain && globalAudioCtx && !isStoppingAmbient) {
+          isStoppingAmbient = true;
+          try {
+            ambientGain.gain.setTargetAtTime(0, globalAudioCtx.currentTime, 0.5);
+          } catch(e) {}
+          setTimeout(() => {
+            if (ambientOsc1) { try { ambientOsc1.stop(); } catch(e){} ambientOsc1.disconnect(); ambientOsc1 = null; }
+            if (ambientOsc2) { try { ambientOsc2.stop(); } catch(e){} ambientOsc2.disconnect(); ambientOsc2 = null; }
+            if (ambientNoise) { try { ambientNoise.stop(); } catch(e){} ambientNoise.disconnect(); ambientNoise = null; }
+            if (ambientFilter) { ambientFilter.disconnect(); ambientFilter = null; }
+            if (ambientGain) { ambientGain.disconnect(); ambientGain = null; }
+            isStoppingAmbient = false;
+          }, 1000);
+        }
+        return;
+      }
+      initAudio();
+      if (!globalAudioCtx) return;
+      if (!ambientGain && !isStoppingAmbient) {
+        try {
+          ambientGain = globalAudioCtx.createGain();
+          ambientGain.gain.value = 0;
+          ambientGain.gain.setTargetAtTime(0.05, globalAudioCtx.currentTime, 1);
+          ambientGain.connect(globalAudioCtx.destination);
+          
+          if (gameType === 'koi') {
+            // Water sound: Filtered noise with modulation
+            const bufferSize = globalAudioCtx.sampleRate * 2;
+            const buffer = globalAudioCtx.createBuffer(1, bufferSize, globalAudioCtx.sampleRate);
+            const data = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+              data[i] = Math.random() * 2 - 1;
+            }
+            ambientNoise = globalAudioCtx.createBufferSource();
+            ambientNoise.buffer = buffer;
+            ambientNoise.loop = true;
+
+            ambientFilter = globalAudioCtx.createBiquadFilter();
+            ambientFilter.type = 'lowpass';
+            ambientFilter.frequency.value = 400;
+            ambientFilter.Q.value = 1;
+
+            ambientNoise.connect(ambientFilter);
+            ambientFilter.connect(ambientGain);
+            ambientNoise.start();
+
+            // Add some low frequency movement
+            ambientOsc1 = globalAudioCtx.createOscillator();
+            ambientOsc1.type = 'sine';
+            ambientOsc1.frequency.value = 0.5; // 0.5 Hz modulation
+            const lfoGain = globalAudioCtx.createGain();
+            lfoGain.gain.value = 200;
+            ambientOsc1.connect(lfoGain);
+            lfoGain.connect(ambientFilter.frequency);
+            ambientOsc1.start();
+          } else {
+            ambientOsc1 = globalAudioCtx.createOscillator();
+            ambientOsc2 = globalAudioCtx.createOscillator();
+            ambientOsc1.type = 'sine';
+            ambientOsc2.type = 'sine';
+            
+            if (gameType === 'sakura') {
+              ambientOsc1.frequency.value = 200;
+              ambientOsc2.frequency.value = 203;
+            } else {
+              ambientOsc1.frequency.value = 150;
+              ambientOsc2.frequency.value = 152;
+            }
+
+            ambientOsc1.connect(ambientGain);
+            ambientOsc2.connect(ambientGain);
+            ambientOsc1.start();
+            ambientOsc2.start();
+          }
+        } catch(e) {}
+      }
+    };
+
+    let lastSoundEnabled = soundEnabledRef.current;
 
     const resize = () => {
       const parent = canvas.parentElement;
@@ -121,7 +276,9 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
     let rocks: { x: number, y: number, r: number, color: string }[] = [];
     let zenInitialized = false;
     let mossPatches: { x: number, y: number, r: number }[] = [];
+    let zenLeaves: { x: number, y: number, color: string, angle: number, size: number }[] = [];
     const rockColors = ['#2a2a2a', '#3d4035', '#4a4a4a', '#1f2421'];
+    const leafColors = ['#f472b6', '#fb7185', '#e879f9', '#38bdf8', '#fbbf24', '#34d399'];
 
     // 4. Koi Pond
     let kois: { x: number, y: number, vx: number, vy: number, size: number, color: string, angle: number }[] = [];
@@ -278,13 +435,14 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
       const pool = [...karutaData].sort(() => Math.random() - 0.5).slice(0, 9);
       const target = pool[Math.floor(Math.random() * pool.length)];
       karutaReadingCard = target;
+      speakWord(target.read);
       
-      const cardW = 60, cardH = 70;
+      const cardW = 50, cardH = 60;
       const cols = 3;
-      const spacing = 12;
+      const spacing = 10;
       const totalW = cols * (cardW + spacing) - spacing;
       const startX = (canvas.width - totalW) / 2;
-      const startY = 155; 
+      const startY = 150; 
 
       karutaCards = pool.map((p, i) => ({
         text: p.grab,
@@ -389,43 +547,48 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
 
       if (gameType === 'tetris') {
         rotateTetrisBlock();
+        playTone(400, 'triangle', 0.05);
       } else if (gameType === 'hanafuda') {
-        hanafudaCards.forEach(c => {
-          if (!c.matched && !c.flipped && x > c.x && x < c.x + c.w && y > c.y && y < c.y + c.h) {
-            c.flipped = true;
-            hanafudaSelected.push(c.id);
-            if (hanafudaSelected.length === 2) {
-              const [id1, id2] = hanafudaSelected;
-              if (hanafudaCards[id1].month === hanafudaCards[id2].month) {
-                hanafudaCards[id1].matched = true;
-                hanafudaCards[id2].matched = true;
-                hanafudaSelected = [];
-                shake(5);
-                spawnParticles(x, y, '#fbbf24');
-              } else {
-                setTimeout(() => {
-                  hanafudaCards[id1].flipped = false;
-                  hanafudaCards[id2].flipped = false;
-                  hanafudaSelected = [];
-                }, 500);
-              }
-            }
-          }
-        });
-      } else if (gameType === 'karuta') {
-        karutaCards.forEach(c => {
-          if (!c.found && x > c.x && x < c.x + c.w && y > c.y && y < c.y + c.h) {
-            if (c.correct) {
-              c.found = true;
-              shake(10);
-              spawnParticles(x, y, '#10b981');
-              setTimeout(initKaruta, 1000);
-            } else {
+        if (hanafudaSelected.length >= 2) return; // Prevent clicking while evaluating
+        const clickedCard = hanafudaCards.find(c => !c.matched && !c.flipped && x > c.x && x < c.x + c.w && y > c.y && y < c.y + c.h);
+        if (clickedCard) {
+          clickedCard.flipped = true;
+          hanafudaSelected.push(clickedCard.id);
+          playTone(600, 'triangle', 0.05);
+          if (hanafudaSelected.length === 2) {
+            const [id1, id2] = hanafudaSelected;
+            if (hanafudaCards[id1].month === hanafudaCards[id2].month) {
+              hanafudaCards[id1].matched = true;
+              hanafudaCards[id2].matched = true;
+              hanafudaSelected = [];
               shake(5);
-              spawnParticles(x, y, '#ef4444');
+              spawnParticles(x, y, '#fbbf24');
+              playTone(800, 'sine', 0.2);
+            } else {
+              playTone(200, 'triangle', 0.2);
+              setTimeout(() => {
+                hanafudaCards[id1].flipped = false;
+                hanafudaCards[id2].flipped = false;
+                hanafudaSelected = [];
+              }, 500);
             }
           }
-        });
+        }
+      } else if (gameType === 'karuta') {
+        const clickedCard = karutaCards.find(c => !c.found && x > c.x && x < c.x + c.w && y > c.y && y < c.y + c.h);
+        if (clickedCard) {
+          if (clickedCard.correct) {
+            clickedCard.found = true;
+            shake(10);
+            spawnParticles(x, y, '#10b981');
+            playTone(800, 'sine', 0.2);
+            setTimeout(initKaruta, 1000);
+          } else {
+            shake(5);
+            spawnParticles(x, y, '#ef4444');
+            playTone(150, 'triangle', 0.3);
+          }
+        }
       } else if (gameType === 'menko') {
         if (!menkoPlayerCard.active) {
           const dx = x - (menkoTargetCard.x + menkoTargetCard.w / 2);
@@ -442,6 +605,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
             spin: (Math.random() - 0.5) * 0.5
           };
           shake(2);
+          playNoise(0.1, 0.1);
         }
       }
     };
@@ -449,6 +613,14 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
 
     const draw = () => {
       if (!isRunning) return;
+
+      manageAmbientSound();
+      if (soundEnabledRef.current && !lastSoundEnabled) {
+        if (gameType === 'karuta' && karutaReadingCard) {
+          speakWord(karutaReadingCard.read);
+        }
+      }
+      lastSoundEnabled = soundEnabledRef.current;
 
       // Handle screen shake
       let shakeX = 0, shakeY = 0;
@@ -511,10 +683,12 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
         if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
           ball.dx *= -1;
           shake(2);
+          playTone(400, 'triangle', 0.05);
         }
         if (ball.y - ball.radius < 0) {
           ball.dy *= -1;
           shake(2);
+          playTone(400, 'triangle', 0.05);
         }
         if (ball.y + ball.radius > canvas.height) {
           ball.x = canvas.width / 2;
@@ -522,6 +696,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
           ball.dy = -5;
           initBricks();
           shake(10);
+          playTone(150, 'sawtooth', 0.3);
         }
 
         if (ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
@@ -529,6 +704,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
           ball.dx = ((ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2)) * 6;
           shake(3);
           spawnParticles(ball.x, ball.y, '#ffffff', 5);
+          playTone(600, 'sine', 0.1);
         }
 
         ctx.beginPath();
@@ -552,6 +728,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
             ball.dy *= -1;
             spawnParticles(b.x + b.w / 2, b.y + b.h / 2, '#ffffff');
             shake(5);
+            playTone(800, 'sine', 0.1);
           }
         });
         if (activeBricks === 0) initBricks();
@@ -584,6 +761,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
         if (mouse.clicked && Date.now() - lastShot > 150) {
           projectiles.push({ x: player.x + player.w / 2 - 2, y: player.y, w: 4, h: 15, dy: -10 });
           lastShot = Date.now();
+          playTone(800, 'triangle', 0.1);
         }
 
         projectiles.forEach((p, i) => {
@@ -614,6 +792,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
               projectiles.splice(pi, 1);
               spawnParticles(e.x + e.w / 2, e.y + e.h / 2, '#ef4444', 15);
               shake(8);
+              playNoise(0.1, 0.2);
             }
           });
         });
@@ -621,8 +800,13 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
         if (hitEdge) {
           enemyDir *= -1;
           enemies.forEach(e => { if (e.active) e.y += 20; });
+          playTone(200, 'triangle', 0.1);
         }
-        if (activeEnemies === 0) initEnemies();
+        if (activeEnemies === 0) {
+          initEnemies();
+          shake(15);
+          playTone(150, 'sawtooth', 0.5);
+        }
 
       } else if (gameType === 'zen') {
         const dx = mouse.x - lastMouse.x;
@@ -645,14 +829,19 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
             ctx.stroke();
           }
           lastMouse = { x: mouse.x, y: mouse.y };
+          if (Math.random() > 0.8) {
+            playNoise(0.01, 0.05);
+          }
         }
 
         if (mouse.clicked) {
-          if (Math.random() > 0.7) {
+          const rand = Math.random();
+          if (rand > 0.7) {
             mossPatches.push({ x: mouse.x, y: mouse.y, r: 20 + Math.random() * 30 });
             spawnParticles(mouse.x, mouse.y, '#4ade80', 5);
             shake(1);
-          } else {
+            playTone(300, 'sine', 0.5, 0.05);
+          } else if (rand > 0.4) {
             rocks.push({ 
               x: mouse.x, 
               y: mouse.y, 
@@ -661,9 +850,37 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
             });
             spawnParticles(mouse.x, mouse.y, '#9ca3af', 8);
             shake(3);
+            playTone(150, 'triangle', 0.3, 0.1);
+          } else {
+            zenLeaves.push({
+              x: mouse.x,
+              y: mouse.y,
+              color: leafColors[Math.floor(Math.random() * leafColors.length)],
+              angle: Math.random() * Math.PI * 2,
+              size: 10 + Math.random() * 10
+            });
+            spawnParticles(mouse.x, mouse.y, '#f472b6', 5);
+            playTone(600, 'sine', 0.2, 0.05);
           }
           mouse.clicked = false;
         }
+
+        // Draw leaves
+        zenLeaves.forEach(leaf => {
+          ctx.save();
+          ctx.translate(leaf.x, leaf.y);
+          ctx.rotate(leaf.angle);
+          ctx.fillStyle = leaf.color;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, leaf.size, leaf.size/2, 0, 0, Math.PI*2);
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+          ctx.beginPath();
+          ctx.moveTo(-leaf.size, 0);
+          ctx.lineTo(leaf.size, 0);
+          ctx.stroke();
+          ctx.restore();
+        });
 
         // Draw moss
         mossPatches.forEach(moss => {
@@ -707,6 +924,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
         if (mouse.clicked) {
           ripples.push({ x: mouse.x, y: mouse.y, r: 0, maxR: 100, alpha: 1 });
           mouse.clicked = false;
+          playTone(300, 'sine', 0.2);
         }
 
         for (let i = ripples.length - 1; i >= 0; i--) {
@@ -741,6 +959,11 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
           if (speed > 2.5) {
             koi.vx = (koi.vx / speed) * 2.5;
             koi.vy = (koi.vy / speed) * 2.5;
+          }
+
+          // Occasional bubble sound
+          if (Math.random() < 0.001) {
+            playTone(400 + Math.random() * 400, 'sine', 0.1, 0.02);
           }
           
           koi.x += koi.vx;
@@ -810,6 +1033,22 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
           ctx.restore();
         });
 
+        if (mouse.clicked) {
+          for (let i = 0; i < 10; i++) {
+            petals.push({
+              x: mouse.x,
+              y: mouse.y,
+              vx: (Math.random() - 0.5) * 5,
+              vy: (Math.random() - 0.5) * 5,
+              size: 4 + Math.random() * 6,
+              angle: Math.random() * Math.PI * 2,
+              spin: (Math.random() - 0.5) * 0.2
+            });
+          }
+          mouse.clicked = false;
+          playTone(500, 'sine', 0.2);
+        }
+
       } else if (gameType === 'tetris') {
         // Law Stacker (Improved)
         // Draw Next Block Preview - moved down to avoid nav bar
@@ -872,6 +1111,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
             tetrisBlocks.push({ ...currentBlock });
             shake(5);
             spawnParticles(currentBlock.x + currentBlock.w / 2, currentBlock.y + currentBlock.h / 2, currentBlock.color, 12);
+            playTone(200, 'triangle', 0.1);
             
             // Check for line clearing (simplified: if a horizontal range is mostly full)
             // In this "stacker" version, we'll just check if we have many blocks at similar Y
@@ -883,6 +1123,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
               tetrisBlocks = tetrisBlocks.filter(b => Math.abs(b.y - rowY) >= 20);
               shake(15);
               spawnParticles(canvas.width / 2, rowY, '#ffffff', 30);
+              playTone(600, 'sine', 0.2);
             }
 
             if (currentBlock.y < 80) {
@@ -989,16 +1230,16 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
 
         // Reading area - moved down to avoid nav bar
         ctx.fillStyle = 'rgba(255,255,255,0.1)';
-        ctx.fillRect(20, 60, canvas.width - 40, 90);
+        ctx.fillRect(20, 50, canvas.width - 40, 80);
         
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 48px serif';
+        ctx.font = 'bold 40px serif';
         ctx.textAlign = 'center';
-        ctx.fillText(karutaReadingCard?.read || "", canvas.width / 2, 115);
+        ctx.fillText(karutaReadingCard?.read || "", canvas.width / 2, 95);
         
-        ctx.font = '12px sans-serif';
+        ctx.font = '10px sans-serif';
         ctx.globalAlpha = 0.6;
-        ctx.fillText('LISTEN TO THE READING...', canvas.width / 2, 140);
+        ctx.fillText('LISTEN TO THE READING...', canvas.width / 2, 115);
         ctx.globalAlpha = 1;
 
         karutaCards.forEach(c => {
@@ -1006,7 +1247,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
           
           // Card shadow
           ctx.fillStyle = 'rgba(0,0,0,0.2)';
-          ctx.fillRect(c.x + 3, c.y + 3, c.w, c.h);
+          ctx.fillRect(c.x + 2, c.y + 2, c.w, c.h);
 
           ctx.fillStyle = '#fef3c7';
           ctx.fillRect(c.x, c.y, c.w, c.h);
@@ -1015,7 +1256,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
           ctx.strokeRect(c.x, c.y, c.w, c.h);
           
           ctx.fillStyle = '#000000';
-          ctx.font = '36px serif';
+          ctx.font = '28px serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(c.text, c.x + c.w / 2, c.y + c.h / 2);
@@ -1085,6 +1326,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
             menkoTargetCard.flipProgress = 0;
             shake(25);
             spawnParticles(menkoTargetCard.x + menkoTargetCard.w / 2, menkoTargetCard.y + menkoTargetCard.h / 2, '#ffffff', 30);
+            playTone(200, 'square', 0.2);
           }
 
           if (menkoPlayerCard.y > canvas.height + 100) {
@@ -1126,6 +1368,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
             flicker: Math.random() * Math.PI * 2
           });
           mouse.clicked = false;
+          playTone(400, 'sine', 0.3);
         }
 
         lanterns.forEach((l, i) => {
@@ -1211,6 +1454,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
           initBonsai();
           mouse.clicked = false;
           shake(5);
+          playTone(200, 'sine', 0.5);
         }
         
         ctx.fillStyle = '#1a1a1a';
@@ -1252,6 +1496,16 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean) {
       window.removeEventListener('mousedown', handleMouseDown);
       window.removeEventListener('mouseup', handleMouseUp);
       canvas.removeEventListener('click', handleCanvasClick);
+      
+      if (ambientGain && globalAudioCtx) {
+        try {
+          ambientGain.gain.setTargetAtTime(0, globalAudioCtx.currentTime, 0.1);
+          if (ambientOsc1) { try { ambientOsc1.stop(); } catch(e){} ambientOsc1.disconnect(); }
+          if (ambientOsc2) { try { ambientOsc2.stop(); } catch(e){} ambientOsc2.disconnect(); }
+          ambientGain.disconnect();
+        } catch(e) {}
+      }
+      window.speechSynthesis.cancel();
     };
   }, [isPlaying, gameType]);
 

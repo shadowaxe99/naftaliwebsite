@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { motion } from 'motion/react';
-import { Play, Square, Info } from 'lucide-react';
+import { Play, Square, Info, Volume2, VolumeX } from 'lucide-react';
 import { useCanvasGame, GameType } from '../hooks/useCanvasGame';
 
 export default function ArcadeCard() {
@@ -8,7 +8,8 @@ export default function ArcadeCard() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [gameType, setGameType] = useState<GameType>('brick');
   const [showCardGames, setShowCardGames] = useState(false);
-  const canvasRef = useCanvasGame(gameType, isPlaying);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const canvasRef = useCanvasGame(gameType, isPlaying, soundEnabled);
 
   const cardGames: { type: GameType, label: string, jp: string, info: string }[] = [
     { 
@@ -32,6 +33,17 @@ export default function ArcadeCard() {
   ];
 
   const [showInfo, setShowInfo] = useState<string | null>(null);
+
+  const getNavBtnClass = (type: GameType | 'card') => {
+    const isLightBg = ['bonsai', 'zen'].includes(gameType);
+    const isActive = type === 'card' ? cardGames.some(g => g.type === gameType) : gameType === type;
+    
+    if (isActive) {
+      return `px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${isLightBg ? 'bg-black text-white' : 'bg-white text-black'}`;
+    } else {
+      return `px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${isLightBg ? 'bg-black/5 text-black hover:bg-black/10' : 'bg-white/10 text-white hover:bg-white/20'}`;
+    }
+  };
 
   return (
     <div 
@@ -68,89 +80,98 @@ export default function ArcadeCard() {
             </div>
           )}
 
-          <div className="absolute top-4 right-4 z-20 flex gap-2 bg-black/20 p-1.5 rounded-full backdrop-blur-md border border-white/10 flex-wrap justify-end max-w-[90vw]">
+          <div className="absolute top-4 right-4 z-20 flex gap-2 p-1.5 flex-wrap justify-end max-w-[90vw]">
             <button 
               onClick={() => { setGameType('brick'); setShowCardGames(false); }}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors ${gameType === 'brick' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+              className={getNavBtnClass('brick')}
             >
               Brick
             </button>
             <button 
               onClick={() => { setGameType('galaga'); setShowCardGames(false); }}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors ${gameType === 'galaga' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+              className={getNavBtnClass('galaga')}
             >
               Galaga
             </button>
             <button 
               onClick={() => { setGameType('tetris'); setShowCardGames(false); }}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors ${gameType === 'tetris' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+              className={getNavBtnClass('tetris')}
             >
               Law Stacker
             </button>
             
-            <div 
-              className="relative"
-              onMouseEnter={() => setShowCardGames(true)}
-              onMouseLeave={() => setShowCardGames(false)}
-            >
+            <div className="relative">
               <button 
-                className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors ${cardGames.some(g => g.type === gameType) ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+                onClick={() => setShowCardGames(!showCardGames)}
+                className={getNavBtnClass('card')}
               >
                 Card Games
               </button>
               {showCardGames && (
-                <div className="absolute top-full right-0 pt-2 z-50">
-                  <div className="bg-black/20 backdrop-blur-xl border border-white/10 rounded-2xl p-2 flex flex-col gap-1 min-w-[160px] shadow-2xl">
-                    {cardGames.map(game => (
-                      <div key={game.type} className="flex items-center gap-1">
-                        <button
-                          onClick={() => { setGameType(game.type); setShowCardGames(false); }}
-                          className={`flex-1 px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest uppercase text-left transition-colors ${gameType === game.type ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
-                        >
-                          {game.label} <span className="opacity-40 ml-1">{game.jp}</span>
-                        </button>
-                        <button 
-                          onClick={() => setShowInfo(game.type)}
-                          className="p-2 text-white/40 hover:text-white transition-colors"
-                        >
-                          <Info size={14} />
-                        </button>
-                      </div>
-                    ))}
+                <>
+                  <div 
+                    className="fixed inset-0 z-40" 
+                    onClick={() => setShowCardGames(false)}
+                  />
+                  <div className="absolute top-full right-0 pt-2 z-50 transition-all duration-200">
+                    <div className="bg-black/80 backdrop-blur-xl border border-white/10 rounded-2xl p-2 flex flex-col gap-1 min-w-[160px] shadow-2xl">
+                      {cardGames.map(game => (
+                        <div key={game.type} className="flex items-center gap-1">
+                          <button
+                            onClick={() => { setGameType(game.type); setShowCardGames(false); }}
+                            className={`flex-1 px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest uppercase text-left transition-colors ${gameType === game.type ? 'bg-white/20 text-white' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
+                          >
+                            {game.label} <span className="opacity-40 ml-1">{game.jp}</span>
+                          </button>
+                          <button 
+                            onClick={() => setShowInfo(game.type)}
+                            className="p-2 text-white/40 hover:text-white transition-colors"
+                          >
+                            <Info size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                </>
               )}
             </div>
 
             <button 
               onClick={() => { setGameType('zen'); setShowCardGames(false); }}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors ${gameType === 'zen' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+              className={getNavBtnClass('zen')}
             >
               Zen
             </button>
             <button 
               onClick={() => { setGameType('koi'); setShowCardGames(false); }}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors ${gameType === 'koi' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+              className={getNavBtnClass('koi')}
             >
               Koi
             </button>
             <button 
               onClick={() => { setGameType('sakura'); setShowCardGames(false); }}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors ${gameType === 'sakura' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+              className={getNavBtnClass('sakura')}
             >
               Sakura
             </button>
             <button 
               onClick={() => { setGameType('lanterns'); setShowCardGames(false); }}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors ${gameType === 'lanterns' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+              className={getNavBtnClass('lanterns')}
             >
               Lanterns
             </button>
             <button 
               onClick={() => { setGameType('bonsai'); setShowCardGames(false); }}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors ${gameType === 'bonsai' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+              className={getNavBtnClass('bonsai')}
             >
               Bonsai
+            </button>
+            <button 
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${soundEnabled ? 'bg-emerald-500/80 text-white' : (['bonsai', 'zen'].includes(gameType) ? 'bg-black/5 text-black hover:bg-black/10' : 'bg-white/10 text-white hover:bg-white/20')} flex items-center gap-1.5 ml-2`}
+            >
+              {soundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />} Sound
             </button>
             <button 
               onClick={() => setIsPlaying(false)}
