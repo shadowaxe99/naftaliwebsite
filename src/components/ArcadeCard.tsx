@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { motion } from 'motion/react';
-import { Play, Square, Info, Volume2, VolumeX } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Play, Square, Info, Volume2, VolumeX, ChevronDown } from 'lucide-react';
 import { useCanvasGame, GameType } from '../hooks/useCanvasGame';
 
 export default function ArcadeCard() {
@@ -10,6 +10,8 @@ export default function ArcadeCard() {
   const [showCardGames, setShowCardGames] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const canvasRef = useCanvasGame(gameType, isPlaying, soundEnabled);
+
+  const [isInfoHovered, setIsInfoHovered] = useState(false);
 
   const cardGames: { type: GameType, label: string, jp: string, info: string }[] = [
     { 
@@ -35,13 +37,17 @@ export default function ArcadeCard() {
   const [showInfo, setShowInfo] = useState<string | null>(null);
 
   const getNavBtnClass = (type: GameType | 'card') => {
-    const isLightBg = ['bonsai', 'zen', 'sakura'].includes(gameType);
-    const isActive = type === 'card' ? cardGames.some(g => g.type === gameType) : gameType === type;
+    const isLightBg = ['bonsai', 'zen', 'sakura', 'infringement'].includes(gameType);
+    const isActive = type === 'card' 
+      ? cardGames.some(g => g.type === gameType) 
+      : gameType === type;
     
     if (isActive) {
       return `px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${isLightBg ? 'bg-black text-white' : 'bg-white text-black'}`;
     } else {
-      return `px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${isLightBg ? 'bg-black/5 text-black hover:bg-black/10' : 'bg-white/10 text-white hover:bg-white/20'}`;
+      // If dropdown is open but no card game is active, keep it gray
+      const isDropdownOpen = type === 'card' && showCardGames;
+      return `px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${isLightBg ? (isDropdownOpen ? 'bg-black/20 text-black' : 'bg-black/10 text-black hover:bg-black/20 border border-black/5') : (isDropdownOpen ? 'bg-white/20 text-white' : 'bg-white/10 text-white hover:bg-white/20 border border-white/5')}`;
     }
   };
 
@@ -80,7 +86,50 @@ export default function ArcadeCard() {
             </div>
           )}
 
-          <div className="absolute top-4 right-4 z-20 flex gap-2 p-1.5 flex-wrap justify-end max-w-[90vw]">
+          <div className={`absolute top-4 right-4 z-20 flex gap-2 p-2 flex-wrap justify-end max-w-[95vw] sm:max-w-[90vw] rounded-2xl transition-all ${['bonsai', 'zen', 'sakura', 'infringement'].includes(gameType) ? 'bg-white/40 backdrop-blur-md border border-white/20 shadow-sm' : ''}`}>
+            {gameType === 'infringement' && (
+              <div className="relative">
+                <button 
+                  onClick={() => setIsInfoHovered(!isInfoHovered)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-all shadow-lg border ${
+                    isInfoHovered 
+                      ? 'bg-red-600 text-white border-red-500' 
+                      : (['bonsai', 'zen', 'sakura', 'infringement'].includes(gameType) ? 'bg-white/90 text-red-600 border-red-200 hover:bg-white' : 'bg-white/10 text-white hover:bg-white/20 border border-white/5')
+                  }`}
+                >
+                  <Info size={14} />
+                  <span className="hidden sm:inline">How to Play</span>
+                </button>
+                
+                <AnimatePresence>
+                  {isInfoHovered && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute top-full right-0 mt-2 w-64 bg-white/95 backdrop-blur-md border border-red-100 rounded-2xl p-4 shadow-2xl z-40"
+                    >
+                      <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-red-600 mb-2">Takedown Protocol</h4>
+                      <p className="text-[11px] text-red-900 leading-relaxed font-medium">
+                        Click infringing marks <span className="font-bold">(©, ™, ®)</span> before the timer ring closes. 
+                        <br /><br />
+                        <span className="opacity-70 italic">"Protect the brand at all costs. Every miss is a liability."</span>
+                      </p>
+                      <div className="mt-3 pt-3 border-t border-red-100 flex justify-between items-center">
+                        <span className="text-[8px] font-mono text-red-400 uppercase">Status: Active</span>
+                        <button 
+                          onClick={() => setIsInfoHovered(false)}
+                          className="text-[9px] font-bold text-red-600 hover:underline"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            )}
+
             <button 
               onClick={() => { setGameType('brick'); setShowCardGames(false); }}
               className={getNavBtnClass('brick')}
@@ -105,7 +154,9 @@ export default function ArcadeCard() {
                 onClick={() => setShowCardGames(!showCardGames)}
                 className={getNavBtnClass('card')}
               >
-                Card Games
+                <span className="flex items-center gap-1">
+                  Card Games <ChevronDown size={10} className={`transition-transform ${showCardGames ? 'rotate-180' : ''}`} />
+                </span>
               </button>
               {showCardGames && (
                 <>
@@ -168,8 +219,14 @@ export default function ArcadeCard() {
               Bonsai
             </button>
             <button 
+              onClick={() => { setGameType('infringement'); setShowCardGames(false); }}
+              className={getNavBtnClass('infringement')}
+            >
+              IP Takedown
+            </button>
+            <button 
               onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${soundEnabled ? 'bg-emerald-500/80 text-white' : (['bonsai', 'zen', 'sakura'].includes(gameType) ? 'bg-black/5 text-black hover:bg-black/10' : 'bg-white/10 text-white hover:bg-white/20')} flex items-center gap-1.5 ml-2`}
+              className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-widest uppercase transition-colors shadow-sm ${soundEnabled ? 'bg-emerald-500/80 text-white' : (['bonsai', 'zen', 'sakura', 'infringement'].includes(gameType) ? 'bg-black/5 text-black hover:bg-black/10' : 'bg-white/10 text-white hover:bg-white/20')} flex items-center gap-1.5 ml-2`}
             >
               {soundEnabled ? <Volume2 size={12} /> : <VolumeX size={12} />} Sound
             </button>

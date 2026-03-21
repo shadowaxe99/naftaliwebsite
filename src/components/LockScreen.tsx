@@ -35,34 +35,34 @@ export default function LockScreen({ onAuthenticate }: { onAuthenticate: () => v
       <div className="film-grain z-0" />
 
       {/* Game Toggle */}
-      <div className="absolute top-6 right-6 z-20 flex gap-2 bg-black/40 p-1.5 rounded-full backdrop-blur-md border border-white/10 flex-wrap justify-end max-w-[80vw]">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex gap-1.5 sm:gap-2 bg-black/40 p-1 sm:p-1.5 rounded-full backdrop-blur-md border border-white/10 flex-wrap justify-end max-w-[90vw] sm:max-w-[80vw]">
         <button 
           onClick={() => setGameType('brick')}
-          className={`px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'brick' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'brick' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
         >
-          Brick Breaker
+          Brick
         </button>
         <button 
           onClick={() => setGameType('galaga')}
-          className={`px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'galaga' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'galaga' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
         >
           Galaga
         </button>
         <button 
           onClick={() => setGameType('zen')}
-          className={`px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'zen' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'zen' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
         >
-          Zen Garden
+          Zen
         </button>
         <button 
           onClick={() => setGameType('koi')}
-          className={`px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'koi' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'koi' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
         >
-          Koi Pond
+          Koi
         </button>
         <button 
           onClick={() => setGameType('sakura')}
-          className={`px-4 py-2 rounded-full text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'sakura' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
+          className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-colors ${gameType === 'sakura' ? 'bg-white text-black' : 'text-white hover:bg-white/20'}`}
         >
           Sakura
         </button>

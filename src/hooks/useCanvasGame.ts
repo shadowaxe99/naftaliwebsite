@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export type GameType = 'brick' | 'galaga' | 'zen' | 'koi' | 'sakura' | 'tetris' | 'lanterns' | 'bonsai' | 'hanafuda' | 'karuta' | 'menko';
+export type GameType = 'brick' | 'galaga' | 'zen' | 'koi' | 'sakura' | 'tetris' | 'lanterns' | 'bonsai' | 'hanafuda' | 'karuta' | 'menko' | 'infringement';
 
 let globalAudioCtx: AudioContext | null = null;
 
@@ -332,6 +332,18 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     let nextBlock: any = null;
     let tetrisLastDrop = Date.now();
     let tetrisScore = 0;
+    let tetrisLastFact = "";
+    let tetrisFactTimer = 0;
+    const legalFacts = [
+      "Fair Use is a legal doctrine that promotes freedom of expression.",
+      "Trademark protection can last indefinitely if the mark is used.",
+      "Copyright exists from the moment a work is fixed in a medium.",
+      "Public Domain works are not restricted by copyright.",
+      "The Lanham Act is the primary federal trademark statute in the US.",
+      "Moral rights are personal rights of creators in their works.",
+      "Derivative works require permission from the original owner.",
+      "Patents protect inventions for a limited period of time."
+    ];
 
     const spawnTetrisBlock = () => {
       if (!nextBlock) {
@@ -528,6 +540,50 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       growBonsai(canvas.width / 2, canvas.height, canvas.height * 0.25, -Math.PI / 2, 20, 1);
     };
 
+    // 11. Infringement (Whack-a-Mole)
+    let infringementItems: { x: number, y: number, r: number, active: boolean, type: string, timer: number, maxTimer: number, isGolden: boolean }[] = [];
+    let infringementScore = 0;
+    let infringementMisses = 0;
+    let infringementCombo = 0;
+    let infringementMaxCombo = 0;
+    let infringementLastSpawn = 0;
+    let infringementLevel = 1;
+    let infringementGameOver = false;
+    let infringementFloatingTexts: { x: number, y: number, text: string, life: number, color: string }[] = [];
+    const infringementTypes = ['©', '™', '®', 'IP'];
+
+    const spawnInfringement = () => {
+      if (infringementGameOver) return;
+      const r = 30;
+      const x = r + Math.random() * (canvas.width - r * 2);
+      const y = r + 100 + Math.random() * (canvas.height - r * 2 - 100);
+      const isGolden = Math.random() > 0.9;
+      
+      // Difficulty scaling
+      const baseTimer = Math.max(40, 100 - (infringementLevel * 5));
+      const timer = isGolden ? baseTimer * 0.6 : baseTimer;
+      
+      infringementItems.push({ 
+        x, y, r, 
+        active: true, 
+        type: isGolden ? '★' : infringementTypes[Math.floor(Math.random() * infringementTypes.length)], 
+        timer,
+        maxTimer: timer,
+        isGolden
+      });
+    };
+
+    const initInfringement = () => {
+      infringementItems = [];
+      infringementScore = 0;
+      infringementMisses = 0;
+      infringementCombo = 0;
+      infringementLevel = 1;
+      infringementGameOver = false;
+      infringementLastSpawn = Date.now();
+      spawnInfringement();
+    };
+
     // Initialize selected game
     if (gameType === 'brick') initBricks();
     if (gameType === 'galaga') initEnemies();
@@ -539,11 +595,67 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     if (gameType === 'hanafuda') initHanafuda();
     if (gameType === 'karuta') initKaruta();
     if (gameType === 'menko') initMenko();
+    if (gameType === 'infringement') initInfringement();
 
     const handleCanvasClick = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
+
+      if (gameType === 'infringement') {
+        if (infringementGameOver) {
+          initInfringement();
+          return;
+        }
+        let hit = false;
+        infringementItems.forEach(item => {
+          if (item.active) {
+            const dx = x - item.x;
+            const dy = y - item.y;
+            if (Math.sqrt(dx * dx + dy * dy) < item.r) {
+              item.active = false;
+              infringementCombo++;
+              infringementMaxCombo = Math.max(infringementMaxCombo, infringementCombo);
+              
+              const basePoints = item.isGolden ? 50 : 10;
+              const bonus = infringementCombo > 1 ? infringementCombo * 5 : 0;
+              const totalPoints = basePoints + bonus;
+              infringementScore += totalPoints;
+              
+              // Level up every 100 points
+              const newLevel = Math.floor(infringementScore / 100) + 1;
+              if (newLevel > infringementLevel) {
+                infringementLevel = newLevel;
+                infringementFloatingTexts.push({
+                  x: canvas.width / 2,
+                  y: canvas.height / 2,
+                  text: `LEVEL UP: ${infringementLevel}`,
+                  life: 1.5,
+                  color: '#dc2626'
+                });
+                playTone(600, 'sine', 0.5, 0.2);
+              }
+
+              hit = true;
+              spawnParticles(item.x, item.y, item.isGolden ? '#fbbf24' : '#ef4444', 20);
+              shake(15);
+              playTone(item.isGolden ? 800 : 400 + (infringementCombo * 20), 'square', 0.1, 0.1);
+              
+              infringementFloatingTexts.push({
+                x: item.x,
+                y: item.y,
+                text: item.isGolden ? `GOLDEN! +${totalPoints}` : `TAKEDOWN! +${totalPoints}`,
+                life: 1.0,
+                color: item.isGolden ? '#b45309' : '#ef4444'
+              });
+            }
+          }
+        });
+        if (!hit) {
+          infringementCombo = 0;
+          playTone(100, 'sawtooth', 0.1, 0.05);
+        }
+      }
 
       if (gameType === 'tetris') {
         rotateTetrisBlock();
@@ -749,6 +861,12 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         if (player.x + player.w > canvas.width) player.x = canvas.width - player.w;
 
         ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('RIGHTS HOLDER', 20, 30);
+        ctx.fillText('DEFEND YOUR IP', 20, 50);
+
+        ctx.fillStyle = '#ffffff';
         ctx.shadowBlur = 15;
         ctx.shadowColor = '#3b82f6';
         ctx.beginPath();
@@ -784,7 +902,10 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.arc(e.x + e.w / 2, e.y + e.h / 2, e.w / 2, 0, Math.PI * 2);
           ctx.fill();
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(e.x + e.w / 4, e.y + e.h / 4, e.w / 2, e.h / 2);
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('©', e.x + e.w / 2, e.y + e.h / 2);
 
           projectiles.forEach((p, pi) => {
             if (p.x < e.x + e.w && p.x + p.w > e.x && p.y < e.y + e.h && p.y + p.h > e.y) {
@@ -962,8 +1083,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           }
 
           // Occasional bubble sound
-          if (Math.random() < 0.001) {
-            playTone(400 + Math.random() * 400, 'sine', 0.1, 0.02);
+          if (Math.random() < 0.005) {
+            playTone(400 + Math.random() * 400, 'sine', 0.1, 0.03);
           }
           
           koi.x += koi.vx;
@@ -1119,6 +1240,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
             const blocksInRow = tetrisBlocks.filter(b => Math.abs(b.y - rowY) < 20).length;
             if (blocksInRow > 5) {
               tetrisScore += 100;
+              tetrisLastFact = legalFacts[Math.floor(Math.random() * legalFacts.length)];
+              tetrisFactTimer = 120; // 2 seconds at 60fps
               // Clear some blocks in that row
               tetrisBlocks = tetrisBlocks.filter(b => Math.abs(b.y - rowY) >= 20);
               shake(15);
@@ -1157,6 +1280,34 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.fillText(b.word, 0, 0);
           ctx.restore();
         });
+
+        // Draw Legal Fact
+        if (tetrisFactTimer > 0) {
+          ctx.save();
+          ctx.fillStyle = 'rgba(0,0,0,0.85)';
+          ctx.fillRect(0, canvas.height / 2 - 50, canvas.width, 100);
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = 'bold 12px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('LEGAL INSIGHT:', canvas.width / 2, canvas.height / 2 - 20);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '10px monospace';
+          const words = tetrisLastFact.split(' ');
+          let line = '';
+          let y = canvas.height / 2;
+          words.forEach(word => {
+            if ((line + word).length > 35) {
+              ctx.fillText(line, canvas.width / 2, y);
+              line = word + ' ';
+              y += 12;
+            } else {
+              line += word + ' ';
+            }
+          });
+          ctx.fillText(line, canvas.width / 2, y);
+          ctx.restore();
+          tetrisFactTimer--;
+        }
 
         ctx.fillStyle = '#ffffff';
         ctx.font = '12px monospace';
@@ -1461,6 +1612,123 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.font = '12px monospace';
         ctx.textAlign = 'center';
         ctx.fillText('Click to regrow', canvas.width / 2, canvas.height - 20);
+      } else if (gameType === 'infringement') {
+        ctx.fillStyle = '#fef2f2';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Grid
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.1)';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < canvas.width; i += 40) {
+          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+        }
+        for (let i = 0; i < canvas.height; i += 40) {
+          ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+        }
+
+        if (!infringementGameOver) {
+          const spawnRate = Math.max(300, 800 - (infringementLevel * 50));
+          if (Date.now() - infringementLastSpawn > spawnRate) {
+            spawnInfringement();
+            infringementLastSpawn = Date.now();
+          }
+        }
+
+        infringementItems.forEach((item, i) => {
+          if (!item.active) {
+            infringementItems.splice(i, 1);
+            return;
+          }
+          if (!infringementGameOver) {
+            item.timer--;
+          }
+          
+          if (item.timer <= 0) {
+            item.active = false;
+            infringementMisses++;
+            infringementCombo = 0;
+            shake(10);
+            playTone(150, 'sawtooth', 0.2, 0.1);
+            
+            if (infringementMisses >= 10) {
+              infringementGameOver = true;
+              playTone(100, 'sawtooth', 1, 0.2);
+            }
+            return;
+          }
+
+          const scale = Math.sin(item.timer * 0.1) * 0.05 + 1;
+          ctx.save();
+          ctx.translate(item.x, item.y);
+          ctx.scale(scale, scale);
+          
+          // Shadow
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = item.isGolden ? 'rgba(251, 191, 36, 0.5)' : 'rgba(239, 68, 68, 0.3)';
+          
+          ctx.fillStyle = item.isGolden ? '#fbbf24' : '#ef4444';
+          ctx.beginPath();
+          ctx.arc(0, 0, item.r, 0, Math.PI * 2);
+          ctx.fill();
+          
+          ctx.fillStyle = item.isGolden ? '#92400e' : '#ffffff';
+          ctx.font = 'bold 20px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(item.type, 0, 0);
+          
+          // Timer ring
+          ctx.strokeStyle = item.isGolden ? '#92400e' : '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(0, 0, item.r - 5, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * (item.timer / item.maxTimer)));
+          ctx.stroke();
+          
+          ctx.restore();
+        });
+
+        // UI
+        ctx.fillStyle = '#ef4444';
+        ctx.font = 'bold 16px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`TAKEDOWNS: ${infringementScore}`, 20, 40);
+        ctx.fillStyle = '#991b1b';
+        ctx.fillText(`LIABILITIES: ${infringementMisses}/10`, 20, 60);
+        ctx.fillStyle = '#dc2626';
+        ctx.fillText(`LEVEL: ${infringementLevel}`, 20, 80);
+        
+        if (infringementCombo > 1) {
+          ctx.fillStyle = '#ef4444';
+          ctx.font = 'bold 24px monospace';
+          ctx.fillText(`${infringementCombo}x COMBO!`, 20, 110);
+        }
+
+        if (infringementGameOver) {
+          ctx.fillStyle = 'rgba(0,0,0,0.8)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#ef4444';
+          ctx.font = 'bold 40px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('BRAND DILUTED', canvas.width / 2, canvas.height / 2 - 40);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '20px monospace';
+          ctx.fillText(`FINAL SCORE: ${infringementScore}`, canvas.width / 2, canvas.height / 2 + 10);
+          ctx.font = '14px monospace';
+          ctx.fillText('CLICK TO RE-LITIGATE', canvas.width / 2, canvas.height / 2 + 50);
+        }
+
+        // Draw floating texts
+        infringementFloatingTexts.forEach((ft, i) => {
+          ctx.save();
+          ctx.globalAlpha = ft.life;
+          ctx.fillStyle = ft.color || '#ef4444';
+          ctx.font = 'bold 16px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(ft.text, ft.x, ft.y - (1 - ft.life) * 50);
+          ctx.restore();
+          ft.life -= 0.02;
+          if (ft.life <= 0) infringementFloatingTexts.splice(i, 1);
+        });
       }
 
       // Draw global particles
