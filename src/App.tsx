@@ -8,6 +8,7 @@ import {
 import { Analytics } from "@vercel/analytics/react";
 import LockScreen from './components/LockScreen';
 import ArcadeCard from './components/ArcadeCard';
+import CareerArchitecture from './components/CareerArchitecture';
 
 // --- Components ---
 
@@ -375,36 +376,7 @@ export default function App() {
             className="py-24 border-t border-neutral-200"
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.8 }}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-              <div className="lg:col-span-4">
-                <h2 className="text-3xl font-serif font-medium mb-2">Experience</h2>
-                <p className="text-neutral-500 text-sm uppercase tracking-widest font-semibold mb-4">Professional & Academic</p>
-                <div className="text-neutral-300 font-bold text-4xl mt-8 hidden lg:block">経歴</div>
-              </div>
-              <div className="lg:col-span-8">
-                <div className="space-y-12">
-                  
-                  {[
-                    { title: "New York Law School", date: "Fall 2026", role: "Juris Doctor (J.D.) Candidate", loc: "", desc: "" },
-                    { title: "BrandWhatever", date: "Summer 2024", role: "Design Intern", loc: "Brooklyn, NY", desc: "Collaborated with senior design staff to produce digital and print advertising materials. Gained proficiency in AI technologies by training Stable Diffusion models for creative asset generation." },
-                    { title: "Yeshiva Pirchei Shoshanim", date: "2022 – 2024", role: "Rabbinic Ordination", loc: "Lakewood, NJ", desc: "Intensive graduate-level study of Jewish law involving rigorous textual analysis and application of complex legal frameworks." },
-                    { title: "Excelsior University", date: "2021 – 2024", role: "Bachelor of Liberal Arts", loc: "Albany, NY", desc: "Recipient of the U.S. Presidential Academic Excellence Award." },
-                    { title: "American Dream Mall", date: "Summer 2021", role: "Creative Consultant", loc: "East Rutherford, NJ", desc: "Consulted with VP of Theme Park Development on creative strategy for successfully constructed Paw Patrol attraction. Drafted comprehensive script for Avatar: The Last Airbender motion simulator ride reviewed by park leadership." }
-                  ].map((item, i) => (
-                    <div key={i} className="relative pl-8 border-l border-neutral-200 group">
-                      <div className="absolute w-3 h-3 bg-neutral-200 group-hover:bg-neutral-900 transition-colors rounded-full -left-[6.5px] top-1.5"></div>
-                      <div className="flex flex-col md:flex-row md:justify-between md:items-baseline mb-2">
-                        <h3 className="text-xl font-medium text-neutral-900">{item.title}</h3>
-                        <span className="text-sm text-neutral-500 font-mono bg-neutral-100 px-2 py-1 rounded">{item.date}</span>
-                      </div>
-                      <p className="text-neutral-900 font-medium mb-2">{item.role} {item.loc && <span className="text-neutral-400 font-normal">| {item.loc}</span>}</p>
-                      {item.desc && <p className="text-neutral-600 text-sm leading-relaxed">{item.desc}</p>}
-                    </div>
-                  ))}
-
-                </div>
-              </div>
-            </div>
+            <CareerArchitecture />
           </motion.section>
 
           {/* Creative Projects */}
