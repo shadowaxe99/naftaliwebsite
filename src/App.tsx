@@ -117,8 +117,19 @@ export default function App() {
 
       {/* Navigation */}
       <nav className="fixed top-0 w-full z-40 glass-nav px-6 py-4 flex justify-between items-center">
-        <div className="font-serif text-xl font-bold tracking-tight">NG.</div>
+        <button 
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          className="font-serif text-xl font-bold tracking-tight cursor-pointer hover:opacity-70 transition-opacity"
+        >
+          NG.
+        </button>
         <div className="hidden md:flex space-x-8 text-sm font-medium text-neutral-600">
+          <button 
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="hover:text-neutral-900 transition-colors cursor-pointer"
+          >
+            Home
+          </button>
           <a href="#about" className="hover:text-neutral-900 transition-colors">About</a>
           <a href="#experience" className="hover:text-neutral-900 transition-colors">Experience</a>
           <a href="#projects" className="hover:text-neutral-900 transition-colors">Projects</a>
