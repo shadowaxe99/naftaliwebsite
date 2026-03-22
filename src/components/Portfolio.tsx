@@ -109,7 +109,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? 'bg-neutral-950 text-white selection:bg-blue-500/30' : 'bg-neutral-50 text-neutral-900 selection:bg-blue-200'} transition-colors duration-700 font-sans`}>
+    <div className={`min-h-screen ${isDarkMode ? 'bg-neutral-950 text-white selection:bg-blue-500/30' : 'bg-paper text-neutral-900 selection:bg-blue-200'} transition-colors duration-700 font-sans`}>
       {/* Scroll Progress Bar */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-[2px] bg-blue-500 origin-left z-[100]"
@@ -126,7 +126,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
       />
 
       {/* Navigation */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${isDarkMode ? 'bg-neutral-950/80' : 'bg-white/80'} backdrop-blur-xl border-b ${isDarkMode ? 'border-neutral-800' : 'border-neutral-200'}`}>
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${isDarkMode ? 'bg-neutral-950/80' : 'bg-paper/80'} backdrop-blur-xl border-b ${isDarkMode ? 'border-neutral-800' : 'border-neutral-200'}`}>
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <motion.div 
             initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
@@ -159,7 +159,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
                 <button className={`p-2.5 rounded-xl ${isDarkMode ? 'hover:bg-neutral-800 text-neutral-400' : 'hover:bg-neutral-100 text-neutral-500'} transition-all`} title="Cursor Style">
                   <MousePointer2 size={18} />
                 </button>
-                <div className={`absolute top-full right-0 mt-2 w-48 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} border rounded-xl shadow-xl opacity-0 invisible group-hover/cursor:opacity-100 group-hover/cursor:visible transition-all z-50 overflow-hidden`}>
+                <div className={`absolute top-full right-0 mt-2 w-48 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-paper border-neutral-200'} border rounded-xl shadow-xl opacity-0 invisible group-hover/cursor:opacity-100 group-hover/cursor:visible transition-all z-50 overflow-hidden`}>
                   <button onClick={() => setCursorType('anime')} className={`w-full text-left px-4 py-2.5 text-xs font-medium ${isDarkMode ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'} ${cursorType === 'anime' ? 'text-blue-500' : ''}`}>Anime (Red) - Default</button>
                   <button onClick={() => setCursorType('mecha')} className={`w-full text-left px-4 py-2.5 text-xs font-medium ${isDarkMode ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'} ${cursorType === 'mecha' ? 'text-blue-500' : ''}`}>Mecha (Cyan)</button>
                   <button onClick={() => setCursorType('default')} className={`w-full text-left px-4 py-2.5 text-xs font-medium ${isDarkMode ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'} ${cursorType === 'default' ? 'text-blue-500' : ''}`}>System Standard</button>
@@ -177,7 +177,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
 
               <button 
                 onClick={() => setCmdOpen(true)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDarkMode ? 'border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400' : 'border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-neutral-500'} transition-all group relative`}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDarkMode ? 'border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400' : 'border-neutral-200 bg-paper hover:bg-neutral-100 text-neutral-500'} transition-all group relative`}
                 title="Search (Cmd+K)"
               >
                 <Search size={14} />
@@ -280,7 +280,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
         </div>
 
         {/* Rolling Expertise Marquee - Full Bleed */}
-        <div className={`py-6 border-y ${isDarkMode ? 'border-neutral-800 bg-neutral-900/10' : 'border-neutral-200 bg-neutral-50/30'} overflow-hidden relative z-10 w-full`}>
+        <div className={`py-6 border-y ${isDarkMode ? 'border-neutral-800 bg-neutral-900/10' : 'border-neutral-200 bg-paper/30'} overflow-hidden relative z-10 w-full`}>
           <div className="flex animate-marquee whitespace-nowrap">
             {[...Array(2)].map((_, i) => (
               <div key={i} className="flex items-center gap-10 px-6">
@@ -316,7 +316,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               {/* Main Bio Card */}
-              <div className={`col-span-1 md:col-span-8 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-[2.5rem] p-8 md:p-12 border relative overflow-hidden group`}>
+              <div className={`col-span-1 md:col-span-8 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-paper border-neutral-200'} rounded-[2.5rem] p-8 md:p-12 border relative overflow-hidden group`}>
                 {/* Background Calligraphy - About Me (略歴) */}
                 <motion.div 
                   variants={float}
@@ -346,7 +346,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
               </div>
 
               {/* Education Card */}
-              <div className={`col-span-1 md:col-span-4 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-[2.5rem] p-8 md:p-10 border relative overflow-hidden group`}>
+              <div className={`col-span-1 md:col-span-4 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-paper border-neutral-200'} rounded-[2.5rem] p-8 md:p-10 border relative overflow-hidden group`}>
                 {/* Background Calligraphy - Jurisprudence (法学) */}
                 <motion.div 
                   variants={float}
@@ -487,11 +487,11 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
               </div>
 
               {/* Other Projects */}
-              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 hover:shadow-md transition-shadow border relative overflow-hidden group`}>
+              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-paper border-neutral-200'} rounded-3xl p-8 hover:shadow-md transition-shadow border relative overflow-hidden group`}>
                 {/* Blueprint Grid Overlay */}
                 <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
                 
-                <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-50'} rounded-full flex items-center justify-center mb-6 border ${isDarkMode ? 'border-neutral-700' : 'border-neutral-100'} group-hover:scale-110 transition-transform duration-500 relative z-10`}>
+                <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-paper'} rounded-full flex items-center justify-center mb-6 border ${isDarkMode ? 'border-neutral-700' : 'border-neutral-100'} group-hover:scale-110 transition-transform duration-500 relative z-10`}>
                   <PenTool className={`w-6 h-6 ${isDarkMode ? 'text-white' : 'text-neutral-900'}`} />
                 </div>
                 <h3 className="text-xl font-medium mb-2 relative z-10">Self-Published Author</h3>
@@ -501,11 +501,11 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
                 </p>
               </div>
 
-              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 hover:shadow-md transition-shadow border relative overflow-hidden group`}>
+              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-paper border-neutral-200'} rounded-3xl p-8 hover:shadow-md transition-shadow border relative overflow-hidden group`}>
                 {/* Blueprint Grid Overlay */}
                 <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
                 
-                <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-50'} rounded-full flex items-center justify-center mb-6 border ${isDarkMode ? 'border-neutral-700' : 'border-neutral-100'} group-hover:scale-110 transition-transform duration-500 relative z-10`}>
+                <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-paper'} rounded-full flex items-center justify-center mb-6 border ${isDarkMode ? 'border-neutral-700' : 'border-neutral-100'} group-hover:scale-110 transition-transform duration-500 relative z-10`}>
                   <Mic className={`w-6 h-6 ${isDarkMode ? 'text-white' : 'text-neutral-900'}`} />
                 </div>
                 <h3 className="text-xl font-medium mb-2 relative z-10">Freelance Voice Actor</h3>
@@ -541,7 +541,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
             {/* Background Accent */}
             <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] ${isDarkMode ? 'bg-blue-900/5' : 'bg-blue-50/30'} rounded-full blur-[120px] pointer-events-none z-0`} />
 
-            <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-[3rem] p-8 md:p-20 text-center max-w-5xl mx-auto relative z-10 border shadow-2xl overflow-hidden`}>
+            <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-paper border-neutral-200'} rounded-[3rem] p-8 md:p-20 text-center max-w-5xl mx-auto relative z-10 border shadow-2xl overflow-hidden`}>
               {/* Blueprint Grid Overlay */}
               <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
               
@@ -564,12 +564,12 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto relative z-10">
                 <CopyButton text="naftaligruen@gmail.com" label="Email Address" icon={Mail} isDarkMode={isDarkMode} />
                 <CopyButton text="646-415-3514" label="Phone Number" icon={Phone} isDarkMode={isDarkMode} />
-                <div className={`sm:col-span-2 flex items-center justify-between w-full p-6 ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100'} border rounded-[2rem] text-left group hover:shadow-md transition-all relative overflow-hidden`}>
+                <div className={`sm:col-span-2 flex items-center justify-between w-full p-6 ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-paper border-neutral-100'} border rounded-[2rem] text-left group hover:shadow-md transition-all relative overflow-hidden`}>
                   {/* Blueprint Grid Overlay */}
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-grid-pattern" />
                   
                   <div className="flex items-center gap-6 relative z-10">
-                    <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-700 text-white' : 'bg-white text-neutral-900'} rounded-2xl flex items-center justify-center shadow-sm border border-neutral-200/10 group-hover:scale-110 transition-transform duration-500`}>
+                    <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-700 text-white' : 'bg-paper text-neutral-900'} rounded-2xl flex items-center justify-center shadow-sm border border-neutral-200/10 group-hover:scale-110 transition-transform duration-500`}>
                       <MapPin size={22} className="text-blue-500" />
                     </div>
                     <div>
@@ -595,7 +595,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
       </main>
 
       {/* Footer */}
-      <footer className={`py-8 border-t ${isDarkMode ? 'border-neutral-800 bg-neutral-950 text-neutral-500' : 'border-neutral-200 bg-white text-neutral-500'} text-center text-sm`}>
+      <footer className={`py-8 border-t ${isDarkMode ? 'border-neutral-800 bg-neutral-950 text-neutral-500' : 'border-neutral-200 bg-paper text-neutral-500'} text-center text-sm`}>
         <p>&copy; {new Date().getFullYear()} Nathan Gruen. All rights reserved.</p>
         <p className="mt-2 text-xs font-mono">J.D. Candidate &middot; Author &middot; Creative Consultant</p>
       </footer>

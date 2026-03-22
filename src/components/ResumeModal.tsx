@@ -46,7 +46,7 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col ${
-                isDarkMode ? 'bg-neutral-900 text-neutral-100' : 'bg-white text-neutral-900'
+                isDarkMode ? 'bg-neutral-900 text-neutral-100' : 'bg-paper text-neutral-900'
               }`}
             >
               {/* Blueprint Background Overlay */}
@@ -55,7 +55,7 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
               
             {/* Header / Toolbar */}
             <div className={`flex items-center justify-between px-6 py-4 border-b no-print relative z-10 ${
-              isDarkMode ? 'border-neutral-800 bg-neutral-900/50' : 'border-neutral-100 bg-neutral-50/50'
+              isDarkMode ? 'border-neutral-800 bg-neutral-900/50' : 'border-neutral-100 bg-paper/50'
             }`}>
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">

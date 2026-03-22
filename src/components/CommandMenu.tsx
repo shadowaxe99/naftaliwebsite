@@ -84,7 +84,7 @@ export default function CommandMenu({ isOpen, onClose, isDarkMode, toggleTheme, 
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: -20 }}
             transition={{ duration: 0.2 }}
-            className={`relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'}`}
+            className={`relative w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-paper border-neutral-200'}`}
           >
             <div className={`flex items-center px-4 py-3 border-b ${isDarkMode ? 'border-neutral-800' : 'border-neutral-100'}`}>
               <Search size={20} className={isDarkMode ? 'text-neutral-500' : 'text-neutral-400'} />
@@ -143,7 +143,7 @@ export default function CommandMenu({ isOpen, onClose, isDarkMode, toggleTheme, 
               )}
             </div>
             
-            <div className={`px-4 py-3 border-t text-xs flex items-center justify-between ${isDarkMode ? 'border-neutral-800 bg-neutral-900/50 text-neutral-500' : 'border-neutral-100 bg-neutral-50/50 text-neutral-400'}`}>
+            <div className={`px-4 py-3 border-t text-xs flex items-center justify-between ${isDarkMode ? 'border-neutral-800 bg-neutral-900/50 text-neutral-500' : 'border-neutral-100 bg-paper/50 text-neutral-400'}`}>
               <div className="flex items-center gap-2">
                 <span className="font-mono bg-neutral-500/10 px-1.5 py-0.5 rounded">↑</span>
                 <span className="font-mono bg-neutral-500/10 px-1.5 py-0.5 rounded">↓</span>
