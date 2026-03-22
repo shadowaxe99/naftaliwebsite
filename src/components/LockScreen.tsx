@@ -43,7 +43,7 @@ export default function LockScreen({ onAuthenticate }: { onAuthenticate: () => v
       </div>
       <div className="absolute bottom-10 right-10 text-[10px] font-mono text-white/20 uppercase tracking-[0.3em] hidden lg:block text-right select-none">
         Coord: 40.6247° N, 73.9450° W<br />
-        © 2026 Nathan Gruen
+        © 2029 Nathan Gruen
       </div>
 
       {/* Zen Game Indicator */}

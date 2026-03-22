@@ -93,7 +93,7 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode }: ResumeModal
                 </div>
                 <div>
                   <h2 className="font-serif font-medium leading-none">Nathan Gruen</h2>
-                  <p className="text-[10px] uppercase tracking-widest opacity-50 mt-1">Official Résumé — v2026.03</p>
+                  <p className="text-[10px] uppercase tracking-widest opacity-50 mt-1">Official Résumé — v2029.03</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -185,6 +185,17 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode }: ResumeModal
                         <div className="h-px flex-1 bg-neutral-200" />
                       </div>
                       <div className="space-y-6">
+                        <div>
+                          <div className="flex justify-between items-start mb-1">
+                            <h4 className="font-bold">Juris Doctor (J.D.) Candidate</h4>
+                            <span className="text-xs font-mono opacity-50">Expected 2029</span>
+                          </div>
+                          <p className="text-sm text-blue-600 mb-2">New York Law School, New York, NY</p>
+                          <p className="text-xs opacity-70 leading-relaxed">
+                            Specializing in Intellectual Property, Entertainment Law, and Digital Rights.
+                          </p>
+                        </div>
+                        <div className="h-px w-full bg-neutral-100" />
                         <div>
                           <div className="flex justify-between items-start mb-1">
                             <h4 className="font-bold">Bachelors of Liberal Arts</h4>

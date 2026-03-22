@@ -70,7 +70,7 @@ const blocks = [
     id: 'law',
     title: 'Legal Frameworks',
     subtitle: 'New York Law School',
-    year: 'Entering Fall 2026',
+    year: '2026 - 2029',
     location: 'New York, NY',
     description: 'Juris Doctor (J.D.) Candidate. Building upon a foundation of rigorous analysis to specialize in Copyright & Trademark Law with a focus on Japanese Intellectual Property.',
     color: 'bg-emerald-600',
