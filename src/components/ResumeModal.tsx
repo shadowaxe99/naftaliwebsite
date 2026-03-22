@@ -45,7 +45,7 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col ${
+              className={`relative w-full max-w-4xl max-h-[90vh] print:max-h-none overflow-hidden print:overflow-visible rounded-3xl print:rounded-none shadow-2xl print:shadow-none flex flex-col ${
                 isDarkMode ? 'bg-neutral-900 text-neutral-100' : 'bg-paper text-neutral-900'
               }`}
             >
@@ -88,25 +88,25 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
             </div>
 
             {/* Resume Content */}
-            <div className="flex-1 overflow-y-auto p-8 md:p-12 print:p-0 print:overflow-visible resume-content relative z-10">
-              <div className="max-w-3xl mx-auto">
+            <div className="flex-1 overflow-y-auto p-8 md:p-12 print:p-8 print:overflow-visible resume-content relative z-10">
+              <div className="max-w-4xl mx-auto">
                 {/* Personal Info */}
-                <header className="mb-12 text-center md:text-left relative">
+                <header className="mb-10 text-center md:text-left print:text-left relative border-b pb-8 print:border-neutral-300">
                   <div className="absolute -left-8 top-0 bottom-0 w-px bg-blue-600/20 hidden md:block print:hidden" />
-                  <h1 className="text-5xl font-serif font-bold mb-4 tracking-tight">Nathan Gruen</h1>
-                  <div className="flex flex-wrap justify-center md:justify-start gap-y-2 gap-x-6 text-sm text-neutral-500 font-medium">
-                    <span className="flex items-center gap-1.5"><MapPin size={14} className="text-blue-600" /> 3323 Avenue K, Brooklyn, NY 11210</span>
-                    <span className="flex items-center gap-1.5"><Phone size={14} className="text-blue-600" /> (646) 415-3514</span>
-                    <span className="flex items-center gap-1.5"><Mail size={14} className="text-blue-600" /> naftaligruen@gmail.com</span>
+                  <h1 className="text-5xl font-serif font-bold mb-4 tracking-tight print:text-black">Nathan Gruen</h1>
+                  <div className="flex flex-wrap justify-center md:justify-start print:justify-start gap-y-2 gap-x-6 text-sm text-neutral-500 print:text-neutral-600 font-medium">
+                    <span className="flex items-center gap-1.5"><MapPin size={14} className="text-blue-600 print:text-neutral-800" /> 3323 Avenue K, Brooklyn, NY 11210</span>
+                    <span className="flex items-center gap-1.5"><Phone size={14} className="text-blue-600 print:text-neutral-800" /> 201-719-1103</span>
+                    <span className="flex items-center gap-1.5"><Mail size={14} className="text-blue-600 print:text-neutral-800" /> naftaligruen@gmail.com</span>
                   </div>
                 </header>
 
-                <div className="grid grid-cols-1 md:grid-cols-[1fr_2.5fr] gap-12">
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_2.5fr] print:grid-cols-[1fr_2.5fr] gap-12 print:gap-8">
                   {/* Left Column: Skills & Meta */}
-                  <aside className="space-y-10">
+                  <aside className="space-y-8 print:space-y-6">
                     <section>
-                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 mb-4">Technical Skills</h3>
-                      <ul className="space-y-2 text-sm opacity-80 font-light">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 print:text-black mb-3">Technical Skills</h3>
+                      <ul className="space-y-1.5 text-sm opacity-80 print:opacity-100 font-light print:text-black">
                         <li>Data Analysis (SQL, Basic R)</li>
                         <li>Microsoft Excel & Google Suite</li>
                         <li>HTML / CSS</li>
@@ -114,8 +114,8 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
                     </section>
 
                     <section>
-                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 mb-4">Creative Skills</h3>
-                      <ul className="space-y-2 text-sm opacity-80 font-light">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 print:text-black mb-3">Creative Skills</h3>
+                      <ul className="space-y-1.5 text-sm opacity-80 print:opacity-100 font-light print:text-black">
                         <li>Adobe Creative Suite</li>
                         <li>Blender 3D</li>
                         <li>Audacity</li>
@@ -123,8 +123,8 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
                     </section>
 
                     <section>
-                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 mb-4">Languages</h3>
-                      <ul className="space-y-2 text-sm opacity-80 font-light">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 print:text-black mb-3">Languages</h3>
+                      <ul className="space-y-1.5 text-sm opacity-80 print:opacity-100 font-light print:text-black">
                         <li>English (Native)</li>
                         <li>Hebrew (Reading & Liturgy)</li>
                         <li>Japanese (Learning)</li>
@@ -132,79 +132,79 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
                     </section>
 
                     <section>
-                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 mb-4">Involvement</h3>
-                      <div className="space-y-4">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 print:text-black mb-3">Involvement</h3>
+                      <div className="space-y-3 print:text-black">
                         <div>
                           <p className="text-sm font-bold">Mentor</p>
-                          <p className="text-xs opacity-60">My Extended Family (2021–2022)</p>
+                          <p className="text-xs opacity-60 print:opacity-80">My Extended Family (2021–2022)</p>
                         </div>
                         <div>
                           <p className="text-sm font-bold">Choir Member</p>
-                          <p className="text-xs opacity-60">Synagogue Choir</p>
+                          <p className="text-xs opacity-60 print:opacity-80">Synagogue Choir</p>
                         </div>
                       </div>
                     </section>
                   </aside>
 
                   {/* Right Column: Main Content */}
-                  <div className="space-y-12">
+                  <div className="print:block">
                     {/* Education */}
-                    <section>
-                      <div className="flex items-center gap-4 mb-6">
-                        <h3 className="text-lg font-serif font-bold">Education</h3>
-                        <div className="h-px flex-1 bg-neutral-200" />
+                    <section className="print:break-inside-avoid">
+                      <div className="flex items-center gap-4 mb-4">
+                        <h3 className="text-lg font-serif font-bold print:text-black">Education</h3>
+                        <div className="h-px flex-1 bg-neutral-200 print:bg-neutral-300" />
                       </div>
-                      <div className="space-y-6">
+                      <div className="space-y-5">
                         <div>
                           <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold">Juris Doctor (J.D.) Candidate</h4>
-                            <span className="text-xs font-mono opacity-50">Expected 2029</span>
+                            <h4 className="font-bold print:text-black">Juris Doctor (J.D.) Candidate</h4>
+                            <span className="text-xs font-mono opacity-50 print:opacity-80 print:text-black">Expected 2029</span>
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">New York Law School, New York, NY</p>
-                          <p className="text-xs opacity-70 leading-relaxed">
+                          <p className="text-sm text-blue-600 print:text-neutral-700 mb-1.5">New York Law School, New York, NY</p>
+                          <p className="text-xs opacity-70 print:opacity-100 print:text-black leading-relaxed">
                             Specializing in Intellectual Property, Entertainment Law, and Digital Rights.
                           </p>
                         </div>
-                        <div className="h-px w-full bg-neutral-100" />
+                        <div className="h-px w-full bg-neutral-100 print:bg-neutral-200" />
                         <div>
                           <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold">Bachelors of Liberal Arts</h4>
-                            <span className="text-xs font-mono opacity-50">2024</span>
+                            <h4 className="font-bold print:text-black">Bachelors of Liberal Arts</h4>
+                            <span className="text-xs font-mono opacity-50 print:opacity-80 print:text-black">2024</span>
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">Excelsior University, Albany, NY</p>
-                          <p className="text-xs opacity-70 leading-relaxed">
+                          <p className="text-sm text-blue-600 print:text-neutral-700 mb-1.5">Excelsior University, Albany, NY</p>
+                          <p className="text-xs opacity-70 print:opacity-100 print:text-black leading-relaxed">
                             Relevant Coursework: Business Writing, American History, Jewish History, Earth Science.
                           </p>
-                          <p className="text-xs mt-2 font-bold text-emerald-600">Honors: U.S. Presidential Academic Excellence Award</p>
+                          <p className="text-xs mt-1.5 font-bold text-emerald-600 print:text-neutral-800">Honors: U.S. Presidential Academic Excellence Award</p>
                         </div>
                       </div>
                     </section>
 
                     {/* Analytical & Legal Training */}
-                    <section>
-                      <div className="flex items-center gap-4 mb-6">
-                        <h3 className="text-lg font-serif font-bold">Analytical & Legal Training</h3>
-                        <div className="h-px flex-1 bg-neutral-200" />
+                    <section className="print:break-inside-avoid mt-10 print:mt-8">
+                      <div className="flex items-center gap-4 mb-4">
+                        <h3 className="text-lg font-serif font-bold print:text-black">Analytical & Legal Training</h3>
+                        <div className="h-px flex-1 bg-neutral-200 print:bg-neutral-300" />
                       </div>
-                      <div className="space-y-8">
+                      <div className="space-y-6">
                         <div>
                           <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold">Yoreh Deah Smicha (Rabbinic Ordination)</h4>
-                            <span className="text-xs font-mono opacity-50">2024</span>
+                            <h4 className="font-bold print:text-black">Yoreh Deah Smicha (Rabbinic Ordination)</h4>
+                            <span className="text-xs font-mono opacity-50 print:opacity-80 print:text-black">2024</span>
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">Yeshiva Pirchei Shoshana</p>
-                          <ul className="text-xs opacity-70 space-y-2 list-disc pl-4 leading-relaxed">
+                          <p className="text-sm text-blue-600 print:text-neutral-700 mb-1.5">Yeshiva Pirchei Shoshana</p>
+                          <ul className="text-xs opacity-70 print:opacity-100 print:text-black space-y-1.5 list-disc pl-4 leading-relaxed">
                             <li>Intensive graduate-level study of Jewish law, involving rigorous textual analysis, logical deduction, and application of complex legal frameworks.</li>
                             <li>Specialized in areas requiring intricate reasoning, such as the laws of mixtures (Ta’aruvos) and procedural prohibitions (Shabbos).</li>
                           </ul>
                         </div>
                         <div>
                           <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold">Data Analytics Professional Certificate</h4>
-                            <span className="text-xs font-mono opacity-50">2023</span>
+                            <h4 className="font-bold print:text-black">Data Analytics Professional Certificate</h4>
+                            <span className="text-xs font-mono opacity-50 print:opacity-80 print:text-black">2023</span>
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">Google Career Certificates</p>
-                          <p className="text-xs opacity-70 leading-relaxed">
+                          <p className="text-sm text-blue-600 print:text-neutral-700 mb-1.5">Google Career Certificates</p>
+                          <p className="text-xs opacity-70 print:opacity-100 print:text-black leading-relaxed">
                             Completed a comprehensive program focused on quantitative reasoning, data analysis, and evidence-based problem-solving using SQL and R.
                           </p>
                         </div>
@@ -212,30 +212,30 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
                     </section>
 
                     {/* Professional Experience */}
-                    <section>
-                      <div className="flex items-center gap-4 mb-6">
-                        <h3 className="text-lg font-serif font-bold">Professional Experience</h3>
-                        <div className="h-px flex-1 bg-neutral-200" />
+                    <section className="print:break-inside-avoid mt-10 print:mt-8">
+                      <div className="flex items-center gap-4 mb-4">
+                        <h3 className="text-lg font-serif font-bold print:text-black">Professional Experience</h3>
+                        <div className="h-px flex-1 bg-neutral-200 print:bg-neutral-300" />
                       </div>
-                      <div className="space-y-8">
+                      <div className="space-y-6">
                         <div>
                           <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold">Intern</h4>
-                            <span className="text-xs font-mono opacity-50">Summer 2024</span>
+                            <h4 className="font-bold print:text-black">Intern</h4>
+                            <span className="text-xs font-mono opacity-50 print:opacity-80 print:text-black">Summer 2024</span>
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">BrandWhatever, Brooklyn, NY</p>
-                          <ul className="text-xs opacity-70 space-y-2 list-disc pl-4 leading-relaxed">
+                          <p className="text-sm text-blue-600 print:text-neutral-700 mb-1.5">BrandWhatever, Brooklyn, NY</p>
+                          <ul className="text-xs opacity-70 print:opacity-100 print:text-black space-y-1.5 list-disc pl-4 leading-relaxed">
                             <li>Collaborated with senior design staff to produce digital and print advertising materials using Adobe Creative Suite.</li>
                             <li>Gained proficiency in emerging AI technologies by training Stable Diffusion models for creative asset generation.</li>
                           </ul>
                         </div>
                         <div>
                           <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold">Theme Park Creative Consultant (Freelance)</h4>
-                            <span className="text-xs font-mono opacity-50">2021</span>
+                            <h4 className="font-bold print:text-black">Theme Park Creative Consultant (Freelance)</h4>
+                            <span className="text-xs font-mono opacity-50 print:opacity-80 print:text-black">2021</span>
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">American Dream Mall, East Rutherford, NJ</p>
-                          <ul className="text-xs opacity-70 space-y-2 list-disc pl-4 leading-relaxed">
+                          <p className="text-sm text-blue-600 print:text-neutral-700 mb-1.5">American Dream Mall, East Rutherford, NJ</p>
+                          <ul className="text-xs opacity-70 print:opacity-100 print:text-black space-y-1.5 list-disc pl-4 leading-relaxed">
                             <li>Consulted directly with senior leadership, including the VP of Theme Park Development, on creative strategy for a major IP-based attraction (PAW Patrol).</li>
                             <li>Drafted a comprehensive script for a motion simulator ride based on the Avatar: The Last Airbender intellectual property.</li>
                           </ul>
@@ -244,30 +244,30 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
                     </section>
 
                     {/* Publications & Creative */}
-                    <section>
-                      <div className="flex items-center gap-4 mb-6">
-                        <h3 className="text-lg font-serif font-bold">Publications & Creative Projects</h3>
-                        <div className="h-px flex-1 bg-neutral-200" />
+                    <section className="print:break-inside-avoid mt-10 print:mt-8">
+                      <div className="flex items-center gap-4 mb-4">
+                        <h3 className="text-lg font-serif font-bold print:text-black">Publications & Creative Projects</h3>
+                        <div className="h-px flex-1 bg-neutral-200 print:bg-neutral-300" />
                       </div>
-                      <div className="space-y-8">
+                      <div className="space-y-6">
                         <div>
                           <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold">Author & Publisher</h4>
-                            <span className="text-xs font-mono opacity-50">2021–Present</span>
+                            <h4 className="font-bold print:text-black">Author & Publisher</h4>
+                            <span className="text-xs font-mono opacity-50 print:opacity-80 print:text-black">2021–Present</span>
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">Self-Employed</p>
-                          <ul className="text-xs opacity-70 space-y-2 list-disc pl-4 leading-relaxed">
+                          <p className="text-sm text-blue-600 print:text-neutral-700 mb-1.5">Self-Employed</p>
+                          <ul className="text-xs opacity-70 print:opacity-100 print:text-black space-y-1.5 list-disc pl-4 leading-relaxed">
                             <li>Authored and self-published four full-length novels, managing the entire lifecycle from concept to market distribution.</li>
                             <li>Genres include fantasy, romance, and mental health fiction.</li>
                           </ul>
                         </div>
                         <div>
                           <div className="flex justify-between items-start mb-1">
-                            <h4 className="font-bold">Voice Actor (Freelance)</h4>
-                            <span className="text-xs font-mono opacity-50">2021–2024</span>
+                            <h4 className="font-bold print:text-black">Voice Actor (Freelance)</h4>
+                            <span className="text-xs font-mono opacity-50 print:opacity-80 print:text-black">2021–2024</span>
                           </div>
-                          <p className="text-sm text-blue-600 mb-2">Various Online Projects</p>
-                          <p className="text-xs opacity-70 leading-relaxed">
+                          <p className="text-sm text-blue-600 print:text-neutral-700 mb-1.5">Various Online Projects</p>
+                          <p className="text-xs opacity-70 print:opacity-100 print:text-black leading-relaxed">
                             Contributed vocal performances to collaborative digital media projects, reaching a global audience of over 14 million viewers.
                           </p>
                         </div>

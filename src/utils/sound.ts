@@ -1,60 +1,50 @@
-let audioCtx: AudioContext | null = null;
-
 export const playUISound = (type: 'click' | 'hover' | 'expand' | 'collapse', muted: boolean) => {
   if (muted) return;
-  try {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
-    }
 
-    const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
+  const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
 
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
 
-    const now = audioCtx.currentTime;
+  const now = audioContext.currentTime;
 
-    if (type === 'expand') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(400, now);
-      osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
-      gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.1, now + 0.05);
-      gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
-      osc.start(now);
-      osc.stop(now + 0.15);
-    } else if (type === 'collapse') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, now);
-      osc.frequency.exponentialRampToValueAtTime(400, now + 0.1);
-      gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.1, now + 0.05);
-      gainNode.gain.linearRampToValueAtTime(0, now + 0.15);
-      osc.start(now);
-      osc.stop(now + 0.15);
-    } else if (type === 'click') {
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(600, now);
-      osc.frequency.exponentialRampToValueAtTime(200, now + 0.05);
-      gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.1, now + 0.02);
-      gainNode.gain.linearRampToValueAtTime(0, now + 0.05);
-      osc.start(now);
-      osc.stop(now + 0.05);
-    } else if (type === 'hover') {
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(800, now);
-      gainNode.gain.setValueAtTime(0, now);
-      gainNode.gain.linearRampToValueAtTime(0.02, now + 0.02);
-      gainNode.gain.linearRampToValueAtTime(0, now + 0.05);
-      osc.start(now);
-      osc.stop(now + 0.05);
-    }
-  } catch (e) {
-    console.error("Audio play failed", e);
+  switch (type) {
+    case 'click':
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, now);
+      oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.1);
+      gainNode.gain.setValueAtTime(0.1, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+      oscillator.start(now);
+      oscillator.stop(now + 0.1);
+      break;
+    case 'hover':
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(1200, now);
+      gainNode.gain.setValueAtTime(0.02, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+      oscillator.start(now);
+      oscillator.stop(now + 0.05);
+      break;
+    case 'expand':
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(400, now);
+      oscillator.frequency.exponentialRampToValueAtTime(800, now + 0.2);
+      gainNode.gain.setValueAtTime(0.05, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      oscillator.start(now);
+      oscillator.stop(now + 0.2);
+      break;
+    case 'collapse':
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, now);
+      oscillator.frequency.exponentialRampToValueAtTime(400, now + 0.2);
+      gainNode.gain.setValueAtTime(0.05, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      oscillator.start(now);
+      oscillator.stop(now + 0.2);
+      break;
   }
 };

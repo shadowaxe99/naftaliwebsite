@@ -94,6 +94,8 @@ export default function ArcadeCard() {
     }
   };
 
+  const [isZenInstructionsMinimized, setIsZenInstructionsMinimized] = useState(false);
+
   return (
     <>
       <motion.div 
@@ -134,7 +136,7 @@ export default function ArcadeCard() {
                   className={getNavBtnClass('card')}
                 >
                   <span className="flex items-center gap-1">
-                    Cards <ChevronDown size={10} className={`transition-transform ${showCardGames ? 'rotate-180' : ''}`} />
+                    {cardGames.find(g => g.type === gameType)?.label || 'Cards'} <ChevronDown size={10} className={`transition-transform ${showCardGames ? 'rotate-180' : ''}`} />
                   </span>
                 </button>
                 <AnimatePresence>
@@ -160,7 +162,7 @@ export default function ArcadeCard() {
                                 onClick={() => { setGameType(game.type); setShowCardGames(false); setShowInfo(null); }}
                                 className={`flex-1 px-4 py-2 rounded-xl text-[10px] font-bold tracking-widest uppercase text-left transition-colors ${gameType === game.type ? 'bg-white text-black' : 'text-white/70 hover:text-white hover:bg-white/10'}`}
                               >
-                                {game.label} <span className="opacity-40 ml-1">{game.jp}</span>
+                                {game.label} <span lang="ja" className="opacity-40 ml-1 font-['Noto_Serif_JP']">{game.jp}</span>
                               </button>
                               <button 
                                 onClick={() => toggleInfo(game.type)}
@@ -246,10 +248,32 @@ export default function ArcadeCard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2 pointer-events-none"
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20"
               >
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Zen Mode: Move and press mouse to interact with the field
+                <div className="bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full flex items-center gap-3 shadow-2xl pointer-events-auto">
+                  {!isZenInstructionsMinimized ? (
+                    <>
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="text-white/80 text-[10px] font-mono uppercase tracking-widest whitespace-nowrap">
+                        Zen Garden: Drag to rake sand. Click to place items.
+                      </span>
+                      <button 
+                        onClick={() => setIsZenInstructionsMinimized(true)}
+                        className="p-1 hover:bg-white/10 rounded-full transition-colors text-white/40 hover:text-white"
+                      >
+                        <ChevronDown className="w-3 h-3" />
+                      </button>
+                    </>
+                  ) : (
+                    <button 
+                      onClick={() => setIsZenInstructionsMinimized(false)}
+                      className="flex items-center gap-2 text-white/60 hover:text-white transition-colors"
+                    >
+                      <Info className="w-3 h-3" />
+                      <span className="text-[9px] font-bold uppercase tracking-[0.2em]">Zen Guide</span>
+                    </button>
+                  )}
+                </div>
               </motion.div>
             )}
 

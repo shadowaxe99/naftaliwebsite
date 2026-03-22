@@ -226,9 +226,42 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       mouse.clicked = false;
     };
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (gameType === 'tetris' && currentTetromino && !tetrisGameOver) {
+        if (['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', ' '].includes(e.key)) {
+          e.preventDefault();
+        }
+        if (e.key === 'ArrowLeft') {
+          if (!checkTetrisCollision(currentTetromino.x - 1, currentTetromino.y, currentTetromino.shape)) {
+            currentTetromino.x--;
+            playTone(300, 'sine', 0.05);
+          }
+        } else if (e.key === 'ArrowRight') {
+          if (!checkTetrisCollision(currentTetromino.x + 1, currentTetromino.y, currentTetromino.shape)) {
+            currentTetromino.x++;
+            playTone(300, 'sine', 0.05);
+          }
+        } else if (e.key === 'ArrowDown') {
+          if (!checkTetrisCollision(currentTetromino.x, currentTetromino.y + 1, currentTetromino.shape)) {
+            currentTetromino.y++;
+            playTone(200, 'sine', 0.05);
+          }
+        } else if (e.key === 'ArrowUp') {
+          rotateTetrisBlock();
+          playTone(400, 'triangle', 0.05);
+        } else if (e.key === ' ') {
+          while (!checkTetrisCollision(currentTetromino.x, currentTetromino.y + 1, currentTetromino.shape)) {
+            currentTetromino.y++;
+          }
+          lockTetrisBlock();
+        }
+      }
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('keydown', handleKeyDown);
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
@@ -303,8 +336,20 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     let zenInitialized = false;
     let mossPatches: { x: number, y: number, r: number }[] = [];
     let zenLeaves: { x: number, y: number, color: string, angle: number, size: number }[] = [];
+    let zenLanterns: { x: number, y: number, glow: number }[] = [];
+    let waterPatches: { x: number, y: number, r: number }[] = [];
     const rockColors = ['#2a2a2a', '#3d4035', '#4a4a4a', '#1f2421'];
     const leafColors = ['#f472b6', '#fb7185', '#e879f9', '#38bdf8', '#fbbf24', '#34d399'];
+    const zenSandColors = [
+      ['#e5e0d8', '#d4cdbd'], // Default sand
+      ['#d8e5e0', '#bdd4cd'], // Mint sand
+      ['#e5d8e0', '#d4bdcd'], // Rose sand
+      ['#e0d8e5', '#cdbdd4'], // Lavender sand
+      ['#2a2a2a', '#1a1a1a'], // Dark sand
+    ];
+    let currentSandColorIndex = 0;
+    let zenTool: 'rock' | 'moss' | 'leaf' | 'lantern' | 'water' = 'rock';
+    const zenTools = ['color', 'clear', 'rock', 'moss', 'leaf', 'lantern', 'water'] as const;
 
     // 4. Koi Pond
     let kois: { x: number, y: number, vx: number, vy: number, size: number, color: string, angle: number }[] = [];
@@ -312,15 +357,16 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     let koiFood: { x: number, y: number, life: number }[] = [];
     const initKoi = () => {
       kois = [];
-      const colors = ['#FF4500', '#FFA500', '#FFFFFF', '#000000', '#FF6347'];
-      for (let i = 0; i < 5; i++) {
+      const colors = ['#ef4444', '#f97316', '#ffffff', '#1e293b', '#f87171']; // Red, Orange, White, Dark, Light Red
+      for (let i = 0; i < 8; i++) {
         kois.push({
           x: Math.random() * canvas.width,
           y: Math.random() * canvas.height,
-          vx: 0, vy: 0,
+          vx: (Math.random() - 0.5) * 2,
+          vy: (Math.random() - 0.5) * 2,
           size: 15 + Math.random() * 10,
           color: colors[i % colors.length],
-          angle: 0
+          angle: Math.random() * Math.PI * 2
         });
       }
     };
@@ -342,23 +388,40 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       }
     };
 
-    // 6. Tetris (Law Stacker - Improved)
+    // 6. Tetris (Law Stacker - Career Builder Edition)
     const tetrisWords = [
-      "COPYRIGHT", "TRADEMARK", "IP LAW", "ENTERTAINMENT", "NYLS", "JAPANESE LAW",
-      "NOVELIST", "VOICE ACTING", "SQL", "STABLE DIFFUSION", "ART SCROLL",
-      "KOHENS TREASURE", "SEMICHAH", "TALMUD", "HALACHA", "ADVOCACY",
-      "JURISPRUDENCE", "LITIGATION", "FAIR USE", "PUBLIC DOMAIN", "WIPO",
-      "BERNE", "LANHAM ACT", "DMCA", "著作権", "商標", "知的財産", "特許",
-      "法律", "裁判", "弁護士", "SAKURA", "HANAFUDA", "KARUTA", "MENKO",
-      "TOKYO", "KYOTO", "OSAKA", "BROOKLYN", "NEW YORK", "PRECEDENT",
-      "STATUTE", "TORT", "EQUITY", "CONTRACT", "LIABILITY", "CONSTITUTION"
+      "LAW", "JURY", "TORT", "CASE", "RULE", "IP", "WIPO", "NYLS", "DMCA", "BOND",
+      "DEED", "LIEN", "OATH", "PLEA", "WRIT", "CODE", "ACT", "BILL", "FEES", "FILE",
+      "HEAR", "JUDG", "LAWS", "LEGL", "MOTN", "ORDR", "PART", "SUIT", "TERM", "TEST",
+      "VOID", "WILL", "WORK", "BAR", "COURT", "DOCKET", "ESTATE", "ETHICS", "GUILTY",
+      "INTENT", "JUDGE", "LAWYER", "MOTION", "NOTICE", "OBJECT", "PARENT", "POLICY",
+      "REASON", "RECORD", "REFORM", "RIGHTS", "SEARCH", "STATUS", "SYSTEM", "TENANT",
+      "THEORY", "TREATY", "TRIAL", "TRUST", "VERDICT", "WITNESS"
     ];
     const tetrisColors = ['#E50000', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
-    let tetrisBlocks: { x: number, y: number, w: number, h: number, word: string, color: string, active: boolean }[] = [];
-    let currentBlock: any = null;
-    let nextBlock: any = null;
+    const tetrominoes = [
+      [[1, 1, 1, 1]], // I
+      [[1, 1], [1, 1]], // O
+      [[0, 1, 0], [1, 1, 1]], // T
+      [[1, 0, 0], [1, 1, 1]], // J
+      [[0, 0, 1], [1, 1, 1]], // L
+      [[0, 1, 1], [1, 1, 0]], // S
+      [[1, 1, 0], [0, 1, 1]]  // Z
+    ];
+    
+    const tetrisCols = 40;
+    const tetrisRows = 20;
+    let tetrisGrid: { color: string, char: string | null }[][] = Array(tetrisRows).fill(null).map(() => Array(tetrisCols).fill(null));
+    
+    let currentTetromino: { shape: number[][], x: number, y: number, color: string, word: string, chars: string[][] } | null = null;
+    let nextTetromino: { shape: number[][], color: string, word: string, chars: string[][] } | null = null;
+    
     let tetrisLastDrop = Date.now();
+    let tetrisDropInterval = 500;
     let tetrisScore = 0;
+    let tetrisLevel = 1;
+    let tetrisLines = 0;
+    let tetrisGameOver = false;
     let tetrisLastFact = "";
     let tetrisFactTimer = 0;
     const legalFacts = [
@@ -373,43 +436,118 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     ];
 
     const spawnTetrisBlock = () => {
-      if (!nextBlock) {
-        const word = tetrisWords[Math.floor(Math.random() * tetrisWords.length)];
-        const color = tetrisColors[Math.floor(Math.random() * tetrisColors.length)];
-        const w = Math.max(80, word.length * 10);
-        const h = 30;
-        nextBlock = { word, color, w, h };
-      }
-      
-      currentBlock = { 
-        ...nextBlock,
-        x: Math.floor(Math.random() * (canvas.width - nextBlock.w)), 
-        y: -40, 
-        active: true, 
-        rotated: false 
+      const createChars = (shape: number[][], word: string) => {
+        const chars: string[][] = shape.map(row => row.map(() => ""));
+        let charIdx = 0;
+        for (let r = 0; r < shape.length; r++) {
+          for (let c = 0; c < shape[r].length; c++) {
+            if (shape[r][c]) {
+              chars[r][c] = word[charIdx % word.length].toUpperCase();
+              charIdx++;
+            }
+          }
+        }
+        return chars;
       };
 
-      const nextWord = tetrisWords[Math.floor(Math.random() * tetrisWords.length)];
-      const nextColor = tetrisColors[Math.floor(Math.random() * tetrisColors.length)];
-      nextBlock = { 
-        word: nextWord, 
-        color: nextColor, 
-        w: Math.max(80, nextWord.length * 10), 
-        h: 30 
+      if (!nextTetromino) {
+        const shape = tetrominoes[Math.floor(Math.random() * tetrominoes.length)];
+        const word = tetrisWords[Math.floor(Math.random() * tetrisWords.length)];
+        nextTetromino = {
+          shape,
+          color: tetrisColors[Math.floor(Math.random() * tetrisColors.length)],
+          word,
+          chars: createChars(shape, word)
+        };
+      }
+      
+      currentTetromino = {
+        ...nextTetromino,
+        x: Math.floor(tetrisCols / 2) - Math.floor(nextTetromino.shape[0].length / 2),
+        y: 0
       };
+      
+      const nextShape = tetrominoes[Math.floor(Math.random() * tetrominoes.length)];
+      const nextWord = tetrisWords[Math.floor(Math.random() * tetrisWords.length)];
+      nextTetromino = {
+        shape: nextShape,
+        color: tetrisColors[Math.floor(Math.random() * tetrisColors.length)],
+        word: nextWord,
+        chars: createChars(nextShape, nextWord)
+      };
+      
+      if (checkTetrisCollision(currentTetromino.x, currentTetromino.y, currentTetromino.shape)) {
+        tetrisGameOver = true;
+      }
+    };
+
+    const checkTetrisCollision = (x: number, y: number, shape: number[][]) => {
+      for (let r = 0; r < shape.length; r++) {
+        for (let c = 0; c < shape[r].length; c++) {
+          if (shape[r][c]) {
+            const newX = x + c;
+            const newY = y + r;
+            if (newX < 0 || newX >= tetrisCols || newY >= tetrisRows) return true;
+            if (newY >= 0 && tetrisGrid[newY][newX]) return true;
+          }
+        }
+      }
+      return false;
     };
 
     const rotateTetrisBlock = () => {
-      if (!currentBlock) return;
-      const oldW = currentBlock.w;
-      const oldH = currentBlock.h;
-      currentBlock.w = oldH;
-      currentBlock.h = oldW;
-      currentBlock.rotated = !currentBlock.rotated;
-      // Keep in bounds
-      if (currentBlock.x + currentBlock.w > canvas.width) {
-        currentBlock.x = canvas.width - currentBlock.w;
+      if (!currentTetromino || tetrisGameOver) return;
+      const shape = currentTetromino.shape;
+      const chars = currentTetromino.chars;
+      const newShape = shape[0].map((_, i) => shape.map(row => row[i]).reverse());
+      const newChars = chars[0].map((_, i) => chars.map(row => row[i]).reverse());
+      if (!checkTetrisCollision(currentTetromino.x, currentTetromino.y, newShape)) {
+        currentTetromino.shape = newShape;
+        currentTetromino.chars = newChars;
       }
+    };
+
+    const lockTetrisBlock = () => {
+      if (!currentTetromino) return;
+      for (let r = 0; r < currentTetromino.shape.length; r++) {
+        for (let c = 0; c < currentTetromino.shape[r].length; c++) {
+          if (currentTetromino.shape[r][c]) {
+            const y = currentTetromino.y + r;
+            const x = currentTetromino.x + c;
+            if (y >= 0 && y < tetrisRows && x >= 0 && x < tetrisCols) {
+              tetrisGrid[y][x] = { color: currentTetromino.color, char: currentTetromino.chars[r][c] };
+            }
+          }
+        }
+      }
+      
+      // Check for lines
+      let linesCleared = 0;
+      for (let r = tetrisRows - 1; r >= 0; r--) {
+        if (tetrisGrid[r].every(cell => cell !== null)) {
+          tetrisGrid.splice(r, 1);
+          tetrisGrid.unshift(Array(tetrisCols).fill(null));
+          linesCleared++;
+          r++; // Check the same row index again
+        }
+      }
+      
+      if (linesCleared > 0) {
+        tetrisLines += linesCleared;
+        tetrisScore += [0, 100, 300, 500, 800][linesCleared] * tetrisLevel;
+        tetrisLevel = Math.floor(tetrisLines / 10) + 1;
+        tetrisDropInterval = Math.max(100, 500 - (tetrisLevel - 1) * 50);
+        
+        tetrisLastFact = legalFacts[Math.floor(Math.random() * legalFacts.length)];
+        tetrisFactTimer = 180;
+        shake(10 + linesCleared * 5);
+        playTone(600 + linesCleared * 100, 'sine', 0.2);
+      } else {
+        shake(3);
+        playTone(200, 'triangle', 0.1);
+      }
+      
+      spawnTetrisBlock();
     };
 
     // 9. Hanafuda (Flower Cards - Matching)
@@ -485,17 +623,17 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     let karutaCards: { text: string, x: number, y: number, w: number, h: number, correct: boolean, found: boolean }[] = [];
     let karutaScore = 0;
     const karutaData = [
-      { read: "A", grab: "あ" }, { read: "I", grab: "い" }, { read: "U", grab: "う" },
-      { read: "E", grab: "え" }, { read: "O", grab: "お" }, { read: "KA", grab: "か" },
-      { read: "KI", grab: "き" }, { read: "KU", grab: "く" }, { read: "KE", grab: "け" },
-      { read: "KO", grab: "こ" }, { read: "SA", grab: "さ" }, { read: "SHI", grab: "し" },
-      { read: "SU", grab: "す" }, { read: "SE", grab: "せ" }, { read: "SO", grab: "そ" }
+      { read: "a", grab: "あ" }, { read: "i", grab: "い" }, { read: "u", grab: "う" },
+      { read: "e", grab: "え" }, { read: "o", grab: "お" }, { read: "ka", grab: "か" },
+      { read: "ki", grab: "き" }, { read: "ku", grab: "く" }, { read: "ke", grab: "け" },
+      { read: "ko", grab: "こ" }, { read: "sa", grab: "さ" }, { read: "shi", grab: "し" },
+      { read: "su", grab: "す" }, { read: "se", grab: "せ" }, { read: "so", grab: "そ" }
     ];
     const initKaruta = () => {
       const pool = [...karutaData].sort(() => Math.random() - 0.5).slice(0, 9);
       const target = pool[Math.floor(Math.random() * pool.length)];
       karutaReadingCard = target;
-      speakWord(target.read);
+      speakWord(target.grab);
       
       const cardW = 50, cardH = 60;
       const cols = 3;
@@ -858,8 +996,33 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       }
 
       if (gameType === 'tetris') {
-        rotateTetrisBlock();
-        playTone(400, 'triangle', 0.05);
+        if (tetrisGameOver) {
+          tetrisGrid = Array(tetrisRows).fill(null).map(() => Array(tetrisCols).fill(null));
+          tetrisScore = 0;
+          tetrisLevel = 1;
+          tetrisLines = 0;
+          tetrisGameOver = false;
+          spawnTetrisBlock();
+          return;
+        }
+        
+        // Move left/right based on click position relative to center
+        if (currentTetromino) {
+          if (x < canvas.width / 3) {
+            if (!checkTetrisCollision(currentTetromino.x - 1, currentTetromino.y, currentTetromino.shape)) {
+              currentTetromino.x--;
+              playTone(300, 'sine', 0.05);
+            }
+          } else if (x > (canvas.width * 2) / 3) {
+            if (!checkTetrisCollision(currentTetromino.x + 1, currentTetromino.y, currentTetromino.shape)) {
+              currentTetromino.x++;
+              playTone(300, 'sine', 0.05);
+            }
+          } else {
+            rotateTetrisBlock();
+            playTone(400, 'triangle', 0.05);
+          }
+        }
       } else if (gameType === 'daifugo') {
         if (daifugoGameOver) {
           initDaifugo();
@@ -996,7 +1159,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       manageAmbientSound();
       if (soundEnabledRef.current && !lastSoundEnabled) {
         if (gameType === 'karuta' && karutaReadingCard) {
-          speakWord(karutaReadingCard.read);
+          speakWord(karutaReadingCard.grab);
         }
       }
       lastSoundEnabled = soundEnabledRef.current;
@@ -1016,8 +1179,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         if (!zenInitialized) {
           // Draw sand gradient
           const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-          grad.addColorStop(0, '#e5e0d8');
-          grad.addColorStop(1, '#d4cdbd');
+          grad.addColorStop(0, zenSandColors[currentSandColorIndex][0]);
+          grad.addColorStop(1, zenSandColors[currentSandColorIndex][1]);
           ctx.fillStyle = grad;
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           zenInitialized = true;
@@ -1211,7 +1374,39 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         const dy = mouse.y - lastMouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        if (dist > 2 && mouse.down) {
+        // Vertical Toolbar on the left
+        const toolbarX = 10;
+        const btnHeight = 40;
+        const btnWidth = 60;
+        const totalHeight = zenTools.length * btnHeight;
+        const startY = (canvas.height - totalHeight) / 2;
+        
+        if (mouse.clicked && mouse.x < toolbarX + btnWidth) {
+          const index = Math.floor((mouse.y - startY) / btnHeight);
+          if (index >= 0 && index < zenTools.length) {
+            const selectedTool = zenTools[index];
+            if (selectedTool === 'color') {
+              currentSandColorIndex = (currentSandColorIndex + 1) % zenSandColors.length;
+              zenInitialized = false;
+              playTone(300, 'sine', 0.1);
+            } else if (selectedTool === 'clear') {
+              rocks = [];
+              mossPatches = [];
+              zenLeaves = [];
+              zenLanterns = [];
+              waterPatches = [];
+              zenInitialized = false;
+              playTone(200, 'sawtooth', 0.2);
+            } else {
+              zenTool = selectedTool as any;
+              playTone(400 + index * 100, 'sine', 0.1);
+            }
+          }
+          mouse.clicked = false;
+        }
+        
+        // Auto-rake on mouse move
+        if (dist > 2 && mouse.x > toolbarX + btnWidth) {
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
           ctx.lineWidth = 3;
           ctx.lineCap = 'round';
@@ -1226,20 +1421,22 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
             ctx.lineTo(mouse.x + nx * i * spacing, mouse.y + ny * i * spacing);
             ctx.stroke();
           }
-          if (Math.random() > 0.8) {
+          if (Math.random() > 0.95) {
             playNoise(0.01, 0.05);
           }
         }
         lastMouse = { x: mouse.x, y: mouse.y };
 
-        if (mouse.clicked) {
-          const rand = Math.random();
-          if (rand > 0.7) {
+        if (mouse.clicked && mouse.x > toolbarX + btnWidth) {
+          // Clicking places the selected item
+          const currentTool = zenTool;
+          
+          if (currentTool === 'moss') {
             mossPatches.push({ x: mouse.x, y: mouse.y, r: 20 + Math.random() * 30 });
             spawnParticles(mouse.x, mouse.y, '#4ade80', 5);
             shake(1);
             playTone(300, 'sine', 0.5, 0.05);
-          } else if (rand > 0.4) {
+          } else if (currentTool === 'rock') {
             rocks.push({ 
               x: mouse.x, 
               y: mouse.y, 
@@ -1249,7 +1446,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
             spawnParticles(mouse.x, mouse.y, '#9ca3af', 8);
             shake(3);
             playTone(150, 'triangle', 0.3, 0.1);
-          } else {
+          } else if (currentTool === 'leaf') {
             zenLeaves.push({
               x: mouse.x,
               y: mouse.y,
@@ -1259,9 +1456,52 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
             });
             spawnParticles(mouse.x, mouse.y, '#f472b6', 5);
             playTone(600, 'sine', 0.2, 0.05);
+          } else if (currentTool === 'lantern') {
+            zenLanterns.push({ x: mouse.x, y: mouse.y, glow: 0 });
+            spawnParticles(mouse.x, mouse.y, '#fbbf24', 10);
+            playTone(800, 'sine', 0.3, 0.1);
+          } else if (currentTool === 'water') {
+            waterPatches.push({ x: mouse.x, y: mouse.y, r: 30 + Math.random() * 40 });
+            spawnParticles(mouse.x, mouse.y, '#38bdf8', 15);
+            playTone(500, 'sine', 0.4, 0.1);
           }
           mouse.clicked = false;
         }
+
+        // Draw water patches
+        waterPatches.forEach(water => {
+          const grad = ctx.createRadialGradient(water.x, water.y, 0, water.x, water.y, water.r);
+          grad.addColorStop(0, 'rgba(56, 189, 248, 0.8)');
+          grad.addColorStop(1, 'rgba(14, 165, 233, 0.4)');
+          ctx.beginPath();
+          ctx.arc(water.x, water.y, water.r, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+          
+          // Add some ripples
+          ctx.beginPath();
+          ctx.arc(water.x, water.y, water.r * 0.6, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.stroke();
+        });
+
+        // Draw moss
+        mossPatches.forEach(moss => {
+          ctx.beginPath();
+          ctx.arc(moss.x, moss.y, moss.r, 0, Math.PI * 2);
+          ctx.fillStyle = 'rgba(74, 124, 89, 0.8)'; // Vibrant moss green
+          ctx.fill();
+          // Moss texture
+          for(let i=0; i<5; i++) {
+            ctx.beginPath();
+            ctx.arc(moss.x + (Math.random()-0.5)*moss.r, moss.y + (Math.random()-0.5)*moss.r, moss.r*0.3, 0, Math.PI*2);
+            ctx.fillStyle = 'rgba(92, 148, 109, 0.9)';
+            ctx.fill();
+          }
+        });
 
         // Draw leaves
         zenLeaves.forEach(leaf => {
@@ -1280,19 +1520,28 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.restore();
         });
 
-        // Draw moss
-        mossPatches.forEach(moss => {
+        // Draw lanterns
+        zenLanterns.forEach(lantern => {
+          lantern.glow += 0.05;
+          const glowRadius = 30 + Math.sin(lantern.glow) * 10;
+          const grad = ctx.createRadialGradient(lantern.x, lantern.y, 0, lantern.x, lantern.y, glowRadius);
+          grad.addColorStop(0, 'rgba(251, 191, 36, 0.6)');
+          grad.addColorStop(1, 'rgba(251, 191, 36, 0)');
+          ctx.fillStyle = grad;
           ctx.beginPath();
-          ctx.arc(moss.x, moss.y, moss.r, 0, Math.PI * 2);
-          ctx.fillStyle = 'rgba(74, 124, 89, 0.8)'; // Vibrant moss green
+          ctx.arc(lantern.x, lantern.y, glowRadius, 0, Math.PI * 2);
           ctx.fill();
-          // Moss texture
-          for(let i=0; i<5; i++) {
-            ctx.beginPath();
-            ctx.arc(moss.x + (Math.random()-0.5)*moss.r, moss.y + (Math.random()-0.5)*moss.r, moss.r*0.3, 0, Math.PI*2);
-            ctx.fillStyle = 'rgba(92, 148, 109, 0.9)';
-            ctx.fill();
-          }
+          
+          ctx.fillStyle = '#451a03';
+          ctx.fillRect(lantern.x - 10, lantern.y - 15, 20, 30);
+          ctx.fillStyle = '#fef3c7';
+          ctx.fillRect(lantern.x - 6, lantern.y - 10, 12, 20);
+          ctx.fillStyle = '#451a03';
+          ctx.beginPath();
+          ctx.moveTo(lantern.x - 15, lantern.y - 15);
+          ctx.lineTo(lantern.x + 15, lantern.y - 15);
+          ctx.lineTo(lantern.x, lantern.y - 25);
+          ctx.fill();
         });
 
         // Draw rocks
@@ -1309,6 +1558,41 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.arc(rock.x - rock.r * 0.3, rock.y - rock.r * 0.3, rock.r * 0.2, 0, Math.PI * 2);
           ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
           ctx.fill();
+        });
+
+        // Draw Vertical Toolbar
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+        ctx.beginPath();
+        ctx.roundRect(toolbarX, startY - 10, btnWidth, totalHeight + 20, 15);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        
+        zenTools.forEach((tool, i) => {
+          const by = startY + i * btnHeight;
+          const isActive = zenTool === tool;
+          
+          if (isActive) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.beginPath();
+            ctx.roundRect(toolbarX + 5, by + 5, btnWidth - 10, btnHeight - 10, 8);
+            ctx.fill();
+          }
+          
+          ctx.fillStyle = isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.6)';
+          ctx.font = 'bold 9px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(tool.toUpperCase(), toolbarX + btnWidth / 2, by + btnHeight / 2);
+          
+          // Small indicator dot for active tool
+          if (isActive) {
+            ctx.fillStyle = '#10b981';
+            ctx.beginPath();
+            ctx.arc(toolbarX + 5, by + btnHeight / 2, 2, 0, Math.PI * 2);
+            ctx.fill();
+          }
         });
 
       } else if (gameType === 'koi') {
@@ -1444,15 +1728,53 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
             koi.angle += diff * 0.1;
           }
 
+          if (speed > 1.2 && Math.random() > 0.95) {
+            ripples.push({ x: koi.x, y: koi.y, r: 0, maxR: 30, alpha: 0.3 });
+          }
+
           ctx.save();
           ctx.translate(koi.x, koi.y);
           ctx.rotate(koi.angle);
           
+          // Body
           ctx.beginPath();
           ctx.ellipse(0, 0, koi.size, koi.size / 2, 0, 0, Math.PI * 2);
           ctx.fillStyle = koi.color;
           ctx.fill();
           
+          // Spots
+          if (koi.color === '#ffffff') {
+            ctx.fillStyle = '#ef4444'; // Red spots on white koi
+            ctx.beginPath();
+            ctx.arc(koi.size * 0.3, koi.size * 0.1, koi.size * 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-koi.size * 0.2, -koi.size * 0.1, koi.size * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+          } else if (koi.color === '#ef4444' || koi.color === '#f97316') {
+            ctx.fillStyle = '#ffffff'; // White spots on red/orange koi
+            ctx.globalAlpha = 0.4;
+            ctx.beginPath();
+            ctx.arc(koi.size * 0.2, -koi.size * 0.1, koi.size * 0.1, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+          }
+
+          // Fins
+          ctx.fillStyle = koi.color;
+          ctx.globalAlpha = 0.6;
+          ctx.beginPath();
+          ctx.moveTo(0, -koi.size * 0.3);
+          ctx.lineTo(-koi.size * 0.4, -koi.size * 0.7);
+          ctx.lineTo(-koi.size * 0.2, -koi.size * 0.3);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(0, koi.size * 0.3);
+          ctx.lineTo(-koi.size * 0.4, koi.size * 0.7);
+          ctx.lineTo(-koi.size * 0.2, koi.size * 0.3);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+
           const tailWiggle = Math.sin(Date.now() * 0.005) * 0.5;
           ctx.beginPath();
           ctx.moveTo(-koi.size * 0.8, 0);
@@ -1542,178 +1864,263 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         }
 
       } else if (gameType === 'tetris') {
-        // Law Stacker (Improved)
-        // Draw Blueprint Grid
+        // Law Stacker (Lego Tetris) - Career Building Edition
         ctx.fillStyle = '#0f172a'; // dark slate
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.1)'; // light blue grid
+        // Board should be whole width of canvas
+        const blockSize = canvas.width / tetrisCols;
+        const gridW = canvas.width;
+        const gridH = tetrisRows * blockSize;
+        const offsetX = 0;
+        const offsetY = canvas.height - gridH;
+        
+        // Draw Grid Background
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+        ctx.fillRect(offsetX, offsetY, gridW, gridH);
+        
+        // Subtle Blueprint Lines
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
         ctx.lineWidth = 1;
-        for (let i = 0; i < canvas.width; i += 20) {
-          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+        for (let i = 0; i <= tetrisCols; i++) {
+          ctx.beginPath(); ctx.moveTo(offsetX + i * blockSize, offsetY); ctx.lineTo(offsetX + i * blockSize, offsetY + gridH); ctx.stroke();
         }
-        for (let i = 0; i < canvas.height; i += 20) {
-          ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
-        }
-
-        // Draw Next Block Preview - moved down to avoid nav bar
-        if (nextBlock) {
-          ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
-          ctx.fillRect(10, 60, 120, 50);
-          ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
-          ctx.strokeRect(10, 60, 120, 50);
-          ctx.fillStyle = '#38bdf8';
-          ctx.font = 'bold 10px monospace';
-          ctx.fillText('NEXT:', 20, 75);
-          ctx.fillStyle = nextBlock.color;
-          ctx.font = 'bold 10px monospace';
-          ctx.fillText(nextBlock.word, 20, 95);
+        for (let i = 0; i <= tetrisRows; i++) {
+          ctx.beginPath(); ctx.moveTo(offsetX, offsetY + i * blockSize); ctx.lineTo(offsetX + gridW, offsetY + i * blockSize); ctx.stroke();
         }
 
-        if (currentBlock) {
-          // Move with mouse but stay in bounds
-          const targetX = mouse.x - currentBlock.w / 2;
-          currentBlock.x += (targetX - currentBlock.x) * 0.2;
-          if (currentBlock.x < 0) currentBlock.x = 0;
-          if (currentBlock.x + currentBlock.w > canvas.width) currentBlock.x = canvas.width - currentBlock.w;
+        const drawBrickBlock = (ctx: CanvasRenderingContext2D, x: number, y: number, size: number, color: string, char?: string | null) => {
+          // 3D Brick Block Effect
+          const topColor = color;
+          const sideColor = shadeColor(color, -15);
+          const bottomColor = shadeColor(color, -30);
+          const highlightColor = shadeColor(color, 30);
 
-          // Ghost block
-          let ghostY = currentBlock.y;
-          while (ghostY + currentBlock.h < canvas.height) {
-            let hit = false;
-            for (let b of tetrisBlocks) {
-              if (ghostY + currentBlock.h >= b.y && ghostY < b.y + b.h && currentBlock.x + currentBlock.w > b.x && currentBlock.x < b.x + b.w) {
-                hit = true;
-                break;
-              }
-            }
-            if (hit) break;
-            ghostY += 2;
+          // Main body
+          ctx.fillStyle = sideColor;
+          ctx.fillRect(x, y, size, size);
+          
+          // Top highlight
+          ctx.fillStyle = highlightColor;
+          ctx.fillRect(x, y, size, size * 0.08);
+          
+          // Left highlight
+          ctx.fillRect(x, y, size * 0.08, size);
+
+          // Bottom shadow
+          ctx.fillStyle = bottomColor;
+          ctx.fillRect(x, y + size * 0.92, size, size * 0.08);
+          
+          // Right shadow
+          ctx.fillRect(x + size * 0.92, y, size * 0.08, size);
+
+          // Brick stud (top circle) - positioned to "lock in"
+          const studR = size * 0.3;
+          const studH = size * 0.15;
+          
+          // Draw stud on top
+          ctx.fillStyle = topColor;
+          ctx.beginPath();
+          ctx.ellipse(x + size / 2, y, studR, studH, 0, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Stud highlight
+          ctx.strokeStyle = highlightColor;
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.ellipse(x + size / 2, y, studR, studH, 0, Math.PI, Math.PI * 2);
+          ctx.stroke();
+
+          // Stud shadow
+          ctx.strokeStyle = bottomColor;
+          ctx.beginPath();
+          ctx.ellipse(x + size / 2, y, studR, studH, 0, 0, Math.PI);
+          ctx.stroke();
+          
+          // Add a small style dot in center of stud
+          ctx.fillStyle = 'rgba(255,255,255,0.15)';
+          ctx.beginPath();
+          ctx.arc(x + size/2, y, studR * 0.4, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Draw character neatly on the block
+          if (char) {
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${size * 0.6}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0,0,0,0.5)';
+            ctx.shadowBlur = 2;
+            ctx.fillText(char, x + size / 2, y + size / 2);
+            ctx.shadowBlur = 0;
           }
-          ctx.fillStyle = currentBlock.color;
-          ctx.globalAlpha = 0.1;
-          ctx.fillRect(currentBlock.x, ghostY, currentBlock.w, currentBlock.h);
-          ctx.globalAlpha = 1;
+        };
 
-          if (Date.now() - tetrisLastDrop > 20) {
-            currentBlock.y += 4;
+        // Helper to shade color
+        function shadeColor(color: string, percent: number) {
+          let R = parseInt(color.substring(1,3), 16);
+          let G = parseInt(color.substring(3,5), 16);
+          let B = parseInt(color.substring(5,7), 16);
+          R = Math.floor(R * (100 + percent) / 100);
+          G = Math.floor(G * (100 + percent) / 100);
+          B = Math.floor(B * (100 + percent) / 100);
+          R = (R < 255) ? R : 255;
+          G = (G < 255) ? G : 255;
+          B = (B < 255) ? B : 255;
+          const RR = ((R.toString(16).length === 1) ? "0" + R.toString(16) : R.toString(16));
+          const GG = ((G.toString(16).length === 1) ? "0" + G.toString(16) : G.toString(16));
+          const BB = ((B.toString(16).length === 1) ? "0" + B.toString(16) : B.toString(16));
+          return "#" + RR + GG + BB;
+        }
+
+        // Draw Next Block Preview
+        if (nextTetromino) {
+          const previewX = 10;
+          const previewY = 10;
+          const previewSize = blockSize * 0.6;
+          
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
+          ctx.beginPath();
+          ctx.roundRect(previewX, previewY, 80, 80, 8);
+          ctx.fill();
+          
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 8px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('NEXT PROJECT', previewX + 40, previewY + 15);
+          
+          const shape = nextTetromino.shape;
+          const sW = shape[0].length * previewSize;
+          const sH = shape.length * previewSize;
+          const sOffX = previewX + (80 - sW) / 2;
+          const sOffY = previewY + (80 - sH) / 2 + 5;
+          
+          shape.forEach((row, y) => {
+            row.forEach((cell, x) => {
+              if (cell) {
+                drawBrickBlock(ctx, sOffX + x * previewSize, sOffY + y * previewSize, previewSize, nextTetromino!.color, nextTetromino!.chars[y][x]);
+              }
+            });
+          });
+        }
+
+        // Draw Score & Level
+        const statsX = canvas.width - 10;
+        const statsY = 10;
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px monospace';
+        ctx.textAlign = 'right';
+        
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+        ctx.beginPath();
+        ctx.roundRect(statsX - 110, statsY, 110, 60, 8);
+        ctx.fill();
+        
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText('CAREER PROGRESS', statsX - 5, statsY + 15);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(`EXP: ${tetrisScore}`, statsX - 5, statsY + 30);
+        ctx.fillText(`RANK: ${tetrisLevel}`, statsX - 5, statsY + 45);
+        ctx.fillText(`GOALS: ${tetrisLines}`, statsX - 5, statsY + 55);
+        ctx.textAlign = 'left';
+
+        // Update & Draw Current Block
+        if (currentTetromino && !tetrisGameOver) {
+          if (Date.now() - tetrisLastDrop > tetrisDropInterval) {
+            if (!checkTetrisCollision(currentTetromino.x, currentTetromino.y + 1, currentTetromino.shape)) {
+              currentTetromino.y++;
+            } else {
+              lockTetrisBlock();
+            }
             tetrisLastDrop = Date.now();
           }
 
-          let collision = false;
-          if (currentBlock.y + currentBlock.h >= canvas.height) {
-            currentBlock.y = canvas.height - currentBlock.h;
-            collision = true;
-          } else {
-            for (let b of tetrisBlocks) {
-              if (currentBlock.y + currentBlock.h >= b.y && currentBlock.y < b.y + b.h && currentBlock.x + currentBlock.w > b.x && currentBlock.x < b.x + b.w) {
-                currentBlock.y = b.y - currentBlock.h;
-                collision = true;
-                break;
+          // Ghost block
+          let ghostY = currentTetromino.y;
+          while (!checkTetrisCollision(currentTetromino.x, ghostY + 1, currentTetromino.shape)) {
+            ghostY++;
+          }
+          
+          ctx.save();
+          ctx.translate(offsetX, offsetY);
+          
+          // Draw Ghost
+          ctx.globalAlpha = 0.2;
+          for (let r = 0; r < currentTetromino.shape.length; r++) {
+            for (let c = 0; c < currentTetromino.shape[r].length; c++) {
+              if (currentTetromino.shape[r][c]) {
+                drawBrickBlock(ctx, (currentTetromino.x + c) * blockSize, (ghostY + r) * blockSize, blockSize, currentTetromino.color, currentTetromino.chars[r][c]);
               }
             }
           }
-
-          if (collision) {
-            tetrisBlocks.push({ ...currentBlock });
-            shake(5);
-            spawnParticles(currentBlock.x + currentBlock.w / 2, currentBlock.y + currentBlock.h / 2, currentBlock.color, 12);
-            playTone(200, 'triangle', 0.1);
-            
-            // Check for line clearing (simplified: if a horizontal range is mostly full)
-            // In this "stacker" version, we'll just check if we have many blocks at similar Y
-            const rowY = Math.floor(currentBlock.y / 10) * 10;
-            const blocksInRow = tetrisBlocks.filter(b => Math.abs(b.y - rowY) < 20).length;
-            if (blocksInRow > 5) {
-              tetrisScore += 100;
-              tetrisLastFact = legalFacts[Math.floor(Math.random() * legalFacts.length)];
-              tetrisFactTimer = 120; // 2 seconds at 60fps
-              // Clear some blocks in that row
-              tetrisBlocks = tetrisBlocks.filter(b => Math.abs(b.y - rowY) >= 20);
-              shake(15);
-              spawnParticles(canvas.width / 2, rowY, '#ffffff', 30);
-              playTone(600, 'sine', 0.2);
+          ctx.globalAlpha = 1.0;
+          
+          // Draw Current
+          for (let r = 0; r < currentTetromino.shape.length; r++) {
+            for (let c = 0; c < currentTetromino.shape[r].length; c++) {
+              if (currentTetromino.shape[r][c]) {
+                drawBrickBlock(ctx, (currentTetromino.x + c) * blockSize, (currentTetromino.y + r) * blockSize, blockSize, currentTetromino.color, currentTetromino.chars[r][c]);
+              }
             }
+          }
+          
+          ctx.restore();
+        }
 
-            if (currentBlock.y < 80) {
-              const shiftAmount = 120;
-              tetrisBlocks.forEach(b => b.y += shiftAmount);
+        // Draw Grid Blocks
+        ctx.save();
+        ctx.translate(offsetX, offsetY);
+        for (let r = 0; r < tetrisRows; r++) {
+          for (let c = 0; c < tetrisCols; c++) {
+            if (tetrisGrid[r][c]) {
+              drawBrickBlock(ctx, c * blockSize, r * blockSize, blockSize, tetrisGrid[r][c]!.color, tetrisGrid[r][c]!.char);
             }
-            spawnTetrisBlock();
           }
         }
+        ctx.restore();
 
-        // Draw all blocks
-        [...tetrisBlocks, currentBlock].forEach(b => {
-          if (!b) return;
-          ctx.save();
-          ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
-          
-          // Block base
-          ctx.fillStyle = b.color;
-          ctx.shadowBlur = 15;
-          ctx.shadowColor = b.color;
-          ctx.beginPath();
-          ctx.roundRect(-b.w / 2, -b.h / 2, b.w, b.h, 4);
-          ctx.fill();
-          ctx.shadowBlur = 0;
-          
-          // Inner highlight for 3D effect
-          ctx.strokeStyle = 'rgba(255,255,255,0.4)';
-          ctx.lineWidth = 2;
-          ctx.beginPath();
-          ctx.roundRect(-b.w / 2 + 2, -b.h / 2 + 2, b.w - 4, b.h - 4, 2);
-          ctx.stroke();
-          
-          // Dark bottom edge
-          ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-          ctx.beginPath();
-          ctx.moveTo(-b.w / 2 + 4, b.h / 2 - 2);
-          ctx.lineTo(b.w / 2 - 4, b.h / 2 - 2);
-          ctx.stroke();
-          
-          ctx.fillStyle = '#ffffff';
-          ctx.font = `bold ${b.rotated ? '10px' : '12px'} monospace`;
+        if (tetrisGameOver) {
+          ctx.fillStyle = 'rgba(0,0,0,0.7)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#ef4444';
+          ctx.font = 'bold 30px sans-serif';
           ctx.textAlign = 'center';
-          ctx.textBaseline = 'middle';
-          ctx.fillText(b.word, 0, 0);
-          ctx.restore();
-        });
-
-        // Draw Legal Fact
-        if (tetrisFactTimer > 0) {
-          ctx.save();
-          ctx.fillStyle = 'rgba(0,0,0,0.85)';
-          ctx.fillRect(0, canvas.height / 2 - 50, canvas.width, 100);
-          ctx.fillStyle = '#fbbf24';
-          ctx.font = 'bold 12px monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText('LEGAL INSIGHT:', canvas.width / 2, canvas.height / 2 - 20);
+          ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
           ctx.fillStyle = '#ffffff';
-          ctx.font = '10px monospace';
-          const words = tetrisLastFact.split(' ');
-          let line = '';
-          let y = canvas.height / 2;
-          words.forEach(word => {
-            if ((line + word).length > 35) {
-              ctx.fillText(line, canvas.width / 2, y);
-              line = word + ' ';
-              y += 12;
-            } else {
-              line += word + ' ';
-            }
-          });
-          ctx.fillText(line, canvas.width / 2, y);
-          ctx.restore();
-          tetrisFactTimer--;
+          ctx.font = '16px sans-serif';
+          ctx.fillText('Click to Restart', canvas.width / 2, canvas.height / 2 + 40);
         }
 
-        ctx.fillStyle = '#ffffff';
-        ctx.font = '12px monospace';
-        ctx.textAlign = 'left';
-        ctx.fillText(`SCORE: ${tetrisScore}`, 20, 30);
-        ctx.fillText('CLICK TO ROTATE', 20, 50);
-
+        if (tetrisFactTimer > 0) {
+          tetrisFactTimer--;
+          ctx.fillStyle = `rgba(15, 23, 42, ${Math.min(1, tetrisFactTimer / 30)})`;
+          ctx.fillRect(20, canvas.height - 100, canvas.width - 40, 80);
+          ctx.strokeStyle = `rgba(56, 189, 248, ${Math.min(1, tetrisFactTimer / 30)})`;
+          ctx.strokeRect(20, canvas.height - 100, canvas.width - 40, 80);
+          
+          ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, tetrisFactTimer / 30)})`;
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('LEGAL FACT:', canvas.width / 2, canvas.height - 75);
+          ctx.font = '12px sans-serif';
+          
+          // Word wrap
+          const words = tetrisLastFact.split(' ');
+          let line = '';
+          let y = canvas.height - 55;
+          for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = ctx.measureText(testLine);
+            if (metrics.width > canvas.width - 60 && n > 0) {
+              ctx.fillText(line, canvas.width / 2, y);
+              line = words[n] + ' ';
+              y += 15;
+            } else {
+              line = testLine;
+            }
+          }
+          ctx.fillText(line, canvas.width / 2, y);
+        }
       } else if (gameType === 'daifugo') {
         ctx.fillStyle = '#064e3b'; // Dark green table
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1921,7 +2328,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
             ctx.textBaseline = 'middle';
             ctx.fillText(c.symbol, c.w / 2, c.h / 2 - 10);
             
-            ctx.font = 'bold 10px serif';
+            ctx.font = 'bold 10px "Noto Serif JP", serif';
             ctx.fillStyle = '#1a1a1a';
             ctx.fillText(c.jp, c.w / 2, c.h / 2 + 25);
           } else {
@@ -2020,7 +2427,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.stroke();
           
           ctx.fillStyle = '#1a1a1a';
-          ctx.font = 'bold 32px serif';
+          ctx.font = 'bold 32px "Noto Serif JP", serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(c.text, c.w / 2, c.h / 2);

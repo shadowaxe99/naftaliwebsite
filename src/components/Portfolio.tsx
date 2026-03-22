@@ -381,6 +381,42 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
             </div>
           </motion.section>
 
+          {/* Legal Philosophy Section */}
+          <motion.section 
+            className="py-20 border-y border-neutral-800/10"
+            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              <div className="space-y-4">
+                <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
+                  <span className="text-blue-500 font-serif font-bold text-sm">01</span>
+                </div>
+                <h3 className={`text-xl font-serif font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Creative Advocacy</h3>
+                <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                  Empowering creators by providing robust legal frameworks that protect their intellectual property without stifling innovation.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                  <span className="text-emerald-500 font-serif font-bold text-sm">02</span>
+                </div>
+                <h3 className={`text-xl font-serif font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Digital Rights</h3>
+                <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                  Navigating the complexities of digital distribution, AI training data, and the evolving landscape of online rights management.
+                </p>
+              </div>
+              <div className="space-y-4">
+                <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center">
+                  <span className="text-amber-500 font-serif font-bold text-sm">03</span>
+                </div>
+                <h3 className={`text-xl font-serif font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Narrative Strategy</h3>
+                <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
+                  Applying storytelling principles to legal advocacy, ensuring that every case and contract tells a clear, compelling story.
+                </p>
+              </div>
+            </div>
+          </motion.section>
+
           {/* Experience Section - Career Architecture */}
           <motion.section 
             id="experience" 
@@ -563,7 +599,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto relative z-10">
                 <CopyButton text="naftaligruen@gmail.com" label="Email Address" icon={Mail} isDarkMode={isDarkMode} />
-                <CopyButton text="646-415-3514" label="Phone Number" icon={Phone} isDarkMode={isDarkMode} />
+                <CopyButton text="201-719-1103" label="Phone Number" icon={Phone} isDarkMode={isDarkMode} />
                 <div className={`sm:col-span-2 flex items-center justify-between w-full p-6 ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-paper border-neutral-100'} border rounded-[2rem] text-left group hover:shadow-md transition-all relative overflow-hidden`}>
                   {/* Blueprint Grid Overlay */}
                   <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-grid-pattern" />

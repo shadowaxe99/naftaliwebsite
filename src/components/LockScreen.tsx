@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Moon, Sun } from 'lucide-react';
+import { Lock, Moon, Sun, ChevronDown, Info } from 'lucide-react';
 import { useCanvasGame, GameType } from '../hooks/useCanvasGame';
 
 export default function LockScreen({ onAuthenticate, isDarkMode, toggleTheme }: { onAuthenticate: () => void, isDarkMode: boolean, toggleTheme: () => void }) {
@@ -21,9 +21,11 @@ export default function LockScreen({ onAuthenticate, isDarkMode, toggleTheme }: 
     }
   };
 
+  const [isZenInstructionsMinimized, setIsZenInstructionsMinimized] = useState(false);
+
   return (
     <div className={`min-h-screen flex items-center justify-center p-6 relative overflow-hidden transition-colors duration-500 ${isDarkMode ? 'bg-[#171717]' : 'bg-paper'}`}>
-      <canvas ref={canvasRef} className={`absolute inset-0 z-0 ${isDarkMode ? 'opacity-50' : 'opacity-30'}`} />
+      <canvas ref={canvasRef} className={`absolute inset-0 z-0 ${isDarkMode ? 'opacity-80' : 'opacity-60'}`} />
       <div className={`absolute inset-0 bg-grid-pattern pointer-events-none z-0 ${isDarkMode ? 'opacity-10' : 'opacity-[0.03]'}`} />
       <div className={`absolute inset-0 pointer-events-none z-0 ${isDarkMode ? 'bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]' : 'bg-[radial-gradient(circle_at_center,transparent_0%,rgba(255,255,255,0.4)_100%)]'}`} />
       <div className="film-grain z-0" />
@@ -40,50 +42,86 @@ export default function LockScreen({ onAuthenticate, isDarkMode, toggleTheme }: 
       </div>
 
       {/* Top Right Controls */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 max-w-[90vw] sm:max-w-[80vw]">
-        {/* Game Toggle */}
-        <div className={`flex items-center p-1 sm:p-1.5 rounded-full backdrop-blur-xl border overflow-hidden ${isDarkMode ? 'bg-black/60 border-white/10' : 'bg-paper/60 border-black/10'}`}>
-          <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-1.5 sm:gap-2 px-2 py-1">
-            <button 
-              onClick={() => setGameType('brick')}
-              className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'brick' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
-            >
-              Brick
-            </button>
-            <button 
-              onClick={() => setGameType('galaga')}
-              className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'galaga' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
-            >
-              Galaga
-            </button>
-            <button 
-              onClick={() => setGameType('zen')}
-              className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'zen' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
-            >
-              Zen
-            </button>
-            <button 
-              onClick={() => setGameType('koi')}
-              className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'koi' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
-            >
-              Koi
-            </button>
-            <button 
-              onClick={() => setGameType('sakura')}
-              className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'sakura' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
-            >
-              Sakura
-            </button>
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6 z-20 flex flex-col items-end gap-3 max-w-[90vw] sm:max-w-[80vw]">
+        <div className="flex items-center gap-2 sm:gap-4">
+          {/* Game Toggle */}
+          <div className={`flex items-center p-1 sm:p-1.5 rounded-full backdrop-blur-xl border overflow-hidden ${isDarkMode ? 'bg-black/60 border-white/10' : 'bg-paper/60 border-black/10'}`}>
+            <div className="flex flex-nowrap overflow-x-auto no-scrollbar gap-1.5 sm:gap-2 px-2 py-1">
+              <button 
+                onClick={() => setGameType('brick')}
+                className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'brick' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
+              >
+                Brick
+              </button>
+              <button 
+                onClick={() => setGameType('galaga')}
+                className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'galaga' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
+              >
+                Galaga
+              </button>
+              <button 
+                onClick={() => setGameType('zen')}
+                className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'zen' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
+              >
+                Zen
+              </button>
+              <button 
+                onClick={() => setGameType('koi')}
+                className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'koi' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
+              >
+                Koi
+              </button>
+              <button 
+                onClick={() => setGameType('sakura')}
+                className={`flex-shrink-0 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-[10px] sm:text-xs font-bold tracking-widest uppercase transition-all ${gameType === 'sakura' ? (isDarkMode ? 'bg-white text-black shadow-lg' : 'bg-black text-white shadow-lg') : (isDarkMode ? 'text-white hover:bg-white/20' : 'text-black hover:bg-black/10')}`}
+              >
+                Sakura
+              </button>
+            </div>
           </div>
+
+          {/* Theme Toggle */}
+          <button 
+            onClick={toggleTheme}
+            className={`p-2 sm:p-3 rounded-full backdrop-blur-xl border transition-all flex-shrink-0 ${isDarkMode ? 'bg-black/60 border-white/10 text-white hover:bg-white/20' : 'bg-paper/60 border-black/10 text-black hover:bg-black/10'}`}
+          >
+            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
         </div>
 
-        {/* Theme Toggle */}
-        <button 
-          onClick={toggleTheme}
-          className={`p-2 sm:p-3 rounded-full backdrop-blur-xl border transition-all flex-shrink-0 ${isDarkMode ? 'bg-black/60 border-white/10 text-white hover:bg-white/20' : 'bg-paper/60 border-black/10 text-black hover:bg-black/10'}`}
-        >
-          {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-        </button>
+        <AnimatePresence>
+          {gameType === 'zen' && (
+            <motion.div 
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              className={`p-1.5 rounded-full backdrop-blur-xl border flex items-center gap-2 shadow-xl ${isDarkMode ? 'bg-black/60 border-white/10 text-white/50' : 'bg-paper/60 border-black/10 text-black/50'}`}
+            >
+              {!isZenInstructionsMinimized ? (
+                <>
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0 ml-2" />
+                  <span className="text-[9px] font-mono uppercase tracking-[0.15em] leading-relaxed max-w-[200px] text-left">
+                    Zen Garden: Drag to rake. Click to place items.
+                  </span>
+                  <button 
+                    onClick={() => setIsZenInstructionsMinimized(true)}
+                    className="p-1 hover:bg-white/10 rounded-full transition-colors"
+                  >
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
+                </>
+              ) : (
+                <button 
+                  onClick={() => setIsZenInstructionsMinimized(false)}
+                  className="flex items-center gap-2 px-3 py-1 hover:bg-white/10 rounded-full transition-colors"
+                >
+                  <Info className="w-3 h-3" />
+                  <span className="text-[8px] font-bold uppercase tracking-[0.2em]">Zen Guide</span>
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <motion.div 
