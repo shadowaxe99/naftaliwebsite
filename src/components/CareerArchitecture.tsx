@@ -125,7 +125,7 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
   };
 
   return (
-    <div ref={containerRef} className="py-24 relative w-full max-w-5xl mx-auto flex flex-col items-center overflow-hidden">
+    <div ref={containerRef} className="py-16 relative w-full max-w-5xl mx-auto flex flex-col items-center overflow-hidden">
       {/* Blueprint Background Elements */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-20">
         <div className={`absolute inset-0 ${isDarkMode ? 'bg-grid-white/[0.05]' : 'bg-grid-black/[0.05]'}`} />
@@ -154,7 +154,7 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
         </motion.div>
       </div>
 
-      <div className="text-center mb-20 relative z-10">
+      <div className="text-center mb-12 relative z-10">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -357,3 +357,4 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
     </div>
   );
 }
+

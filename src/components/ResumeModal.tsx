@@ -16,37 +16,90 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode }: ResumeModal
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-md"
-          />
-          
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col ${
-              isDarkMode ? 'bg-neutral-900 text-neutral-100' : 'bg-white text-neutral-900'
-            }`}
-          >
+        <>
+          <style>
+            {`
+              @media print {
+                body > *:not(#root) {
+                  display: none !important;
+                }
+                #root > div {
+                  overflow: visible !important;
+                }
+                #root > div > *:not(.resume-modal-wrapper) {
+                  display: none !important;
+                }
+                .resume-modal-wrapper {
+                  position: static !important;
+                  display: block !important;
+                  height: auto !important;
+                  overflow: visible !important;
+                }
+                .resume-modal-backdrop, .no-print {
+                  display: none !important;
+                }
+                #resume-print-container {
+                  position: static !important;
+                  width: 100% !important;
+                  max-width: none !important;
+                  margin: 0 !important;
+                  padding: 0 !important;
+                  box-shadow: none !important;
+                  background: white !important;
+                  color: black !important;
+                  overflow: visible !important;
+                  height: auto !important;
+                  transform: none !important;
+                }
+                .resume-content {
+                  overflow: visible !important;
+                  padding: 0 !important;
+                }
+                @page {
+                  margin: 0.5in;
+                }
+              }
+            `}
+          </style>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 resume-modal-wrapper">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={onClose}
+              className="absolute inset-0 bg-black/60 backdrop-blur-md resume-modal-backdrop"
+            />
+            
+            <motion.div
+              id="resume-print-container"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className={`relative w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-3xl shadow-2xl flex flex-col ${
+                isDarkMode ? 'bg-neutral-900 text-neutral-100' : 'bg-white text-neutral-900'
+              }`}
+            >
+              {/* Blueprint Background Overlay */}
+              <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600" />
+              
             {/* Header / Toolbar */}
-            <div className={`flex items-center justify-between px-6 py-4 border-b ${
+            <div className={`flex items-center justify-between px-6 py-4 border-b no-print relative z-10 ${
               isDarkMode ? 'border-neutral-800 bg-neutral-900/50' : 'border-neutral-100 bg-neutral-50/50'
             }`}>
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
                   <Download size={16} />
                 </div>
-                <h2 className="font-serif font-medium">Nathan Gruen — Résumé</h2>
+                <div>
+                  <h2 className="font-serif font-medium leading-none">Nathan Gruen</h2>
+                  <p className="text-[10px] uppercase tracking-widest opacity-50 mt-1">Official Résumé — v2026.03</p>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={handlePrint}
-                  className={`p-2 rounded-xl transition-colors ${
+                  className={`p-2 rounded-xl transition-all active:scale-95 ${
                     isDarkMode ? 'hover:bg-neutral-800 text-neutral-400 hover:text-white' : 'hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900'
                   }`}
                   title="Print Résumé"
@@ -55,7 +108,7 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode }: ResumeModal
                 </button>
                 <button
                   onClick={onClose}
-                  className={`p-2 rounded-xl transition-colors ${
+                  className={`p-2 rounded-xl transition-all active:scale-95 ${
                     isDarkMode ? 'hover:bg-neutral-800 text-neutral-400 hover:text-white' : 'hover:bg-neutral-100 text-neutral-500 hover:text-neutral-900'
                   }`}
                 >
@@ -65,15 +118,16 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode }: ResumeModal
             </div>
 
             {/* Resume Content */}
-            <div className="flex-1 overflow-y-auto p-8 md:p-12 print:p-0 resume-content">
+            <div className="flex-1 overflow-y-auto p-8 md:p-12 print:p-0 print:overflow-visible resume-content relative z-10">
               <div className="max-w-3xl mx-auto">
                 {/* Personal Info */}
-                <header className="mb-12 text-center md:text-left">
+                <header className="mb-12 text-center md:text-left relative">
+                  <div className="absolute -left-8 top-0 bottom-0 w-px bg-blue-600/20 hidden md:block" />
                   <h1 className="text-5xl font-serif font-bold mb-4 tracking-tight">Nathan Gruen</h1>
                   <div className="flex flex-wrap justify-center md:justify-start gap-y-2 gap-x-6 text-sm text-neutral-500 font-medium">
-                    <span className="flex items-center gap-1.5"><MapPin size={14} /> 3323 Avenue K, Brooklyn, NY 11210</span>
-                    <span className="flex items-center gap-1.5"><Phone size={14} /> (646) 415-3514</span>
-                    <span className="flex items-center gap-1.5"><Mail size={14} /> naftaligruen@gmail.com</span>
+                    <span className="flex items-center gap-1.5"><MapPin size={14} className="text-blue-600" /> 3323 Avenue K, Brooklyn, NY 11210</span>
+                    <span className="flex items-center gap-1.5"><Phone size={14} className="text-blue-600" /> (646) 415-3514</span>
+                    <span className="flex items-center gap-1.5"><Mail size={14} className="text-blue-600" /> naftaligruen@gmail.com</span>
                   </div>
                 </header>
 
@@ -243,7 +297,8 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode }: ResumeModal
               </div>
             </div>
           </motion.div>
-        </div>
+          </div>
+        </>
       )}
     </AnimatePresence>
   );

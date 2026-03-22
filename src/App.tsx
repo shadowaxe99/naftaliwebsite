@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useSpring, AnimatePresence } from 'motion/react';
 import { 
   BookOpen, Briefcase, GraduationCap, Mail, MapPin, Phone, Globe, 
-  Mic, PenTool, ChevronRight, Command, Search, Copy, Check, 
-  Download, ArrowUpRight, Terminal, Database, Code, Lock, Moon, Sun, FileText
+  Mic, PenTool, ChevronRight, Command, Search, Copy, Check, Gamepad2,
+  Download, ArrowUpRight, Terminal, Database, Code, Lock, Moon, Sun, FileText, Volume2, VolumeX
 } from 'lucide-react';
 import { Analytics } from "@vercel/analytics/react";
 import LockScreen from './components/LockScreen';
@@ -55,6 +55,7 @@ export default function App() {
   const [resumeOpen, setResumeOpen] = useState(false);
   const [expandedInsightId, setExpandedInsightId] = useState<string | null>(null);
   const [isBookExpanded, setIsBookExpanded] = useState(false);
+  const [isGlobalSoundOn, setIsGlobalSoundOn] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const toggleTheme = () => {
@@ -120,11 +121,11 @@ export default function App() {
   return (
     <div className={`min-h-screen ${isDarkMode ? 'bg-neutral-950 text-neutral-100 selection:bg-neutral-100 selection:text-neutral-950' : 'bg-[#fdfdfc] text-neutral-900 selection:bg-neutral-900 selection:text-white'} relative overflow-x-hidden transition-colors duration-500`}>
       {/* Subtle background gradients */}
-      <div className={`absolute top-0 left-0 w-full h-[800px] bg-gradient-to-b ${isDarkMode ? 'from-neutral-900' : 'from-neutral-100'} to-transparent pointer-events-none z-0`} />
-      <div className={`absolute top-[-20%] left-[-10%] w-[50%] h-[50%] ${isDarkMode ? 'bg-blue-900/20' : 'bg-blue-50/40'} rounded-full blur-3xl pointer-events-none z-0`} />
-      <div className={`absolute top-[20%] right-[-10%] w-[40%] h-[40%] ${isDarkMode ? 'bg-emerald-900/20' : 'bg-emerald-50/40'} rounded-full blur-3xl pointer-events-none z-0`} />
+      <div className={`absolute top-0 left-0 w-full h-[1000px] bg-gradient-to-b ${isDarkMode ? 'from-neutral-900/50' : 'from-neutral-100/50'} to-transparent pointer-events-none z-0`} />
+      <div className={`absolute top-[-20%] left-[-10%] w-[60%] h-[60%] ${isDarkMode ? 'bg-blue-900/10' : 'bg-blue-50/30'} rounded-full blur-[120px] pointer-events-none z-0`} />
+      <div className={`absolute top-[10%] right-[-10%] w-[50%] h-[50%] ${isDarkMode ? 'bg-emerald-900/10' : 'bg-emerald-50/30'} rounded-full blur-[120px] pointer-events-none z-0`} />
       
-      <div className="film-grain z-50 pointer-events-none" />
+      <div className="film-grain z-[100] pointer-events-none" />
       
       {/* Scroll Progress Bar */}
       <motion.div 
@@ -133,14 +134,14 @@ export default function App() {
       />
 
       {/* Navigation */}
-      <nav className={`fixed top-0 w-full z-40 ${isDarkMode ? 'bg-neutral-950/80' : 'bg-white/80'} backdrop-blur-md border-b ${isDarkMode ? 'border-neutral-800' : 'border-neutral-100'} px-6 py-4 flex justify-between items-center transition-colors`}>
+      <nav className={`fixed top-0 w-full z-40 ${isDarkMode ? 'bg-neutral-950/80' : 'bg-white/80'} backdrop-blur-md border-b ${isDarkMode ? 'border-neutral-800' : 'border-neutral-100'} px-6 py-6 flex justify-between items-center transition-colors`}>
         <button 
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           className="font-serif text-xl font-bold tracking-tight cursor-pointer hover:opacity-70 transition-opacity"
         >
           NG.
         </button>
-        <div className={`hidden md:flex space-x-8 text-sm font-medium ${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'}`}>
+        <div className={`hidden md:flex space-x-8 text-sm font-medium ${isDarkMode ? 'text-neutral-300' : 'text-neutral-600'}`}>
           <button 
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className={`hover:${isDarkMode ? 'text-white' : 'text-neutral-900'} transition-colors cursor-pointer`}
@@ -161,11 +162,25 @@ export default function App() {
             <span>Search</span>
             <kbd className={`font-mono ${isDarkMode ? 'bg-neutral-800 border-neutral-700 text-neutral-400' : 'bg-white border-neutral-200'} px-1.5 py-0.5 rounded border shadow-sm ml-2`}>⌘K</kbd>
           </button>
+          <a 
+            href="#canvas"
+            className={`p-2 rounded-full ${isDarkMode ? 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'} transition-colors`}
+            title="Interactive Canvas"
+          >
+            <Gamepad2 size={18} />
+          </a>
           <button 
             onClick={() => setCmdOpen(true)}
             className={`flex sm:hidden p-2 rounded-full ${isDarkMode ? 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'} transition-colors`}
           >
             <Search size={18} />
+          </button>
+          <button 
+            onClick={() => setIsGlobalSoundOn(!isGlobalSoundOn)}
+            className={`p-2 rounded-full ${isDarkMode ? 'bg-neutral-900 text-neutral-400 hover:bg-neutral-800' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'} transition-colors`}
+            title={isGlobalSoundOn ? "Mute Site Sounds" : "Enable Site Sounds"}
+          >
+            {isGlobalSoundOn ? <Volume2 size={18} /> : <VolumeX size={18} />}
           </button>
           <button 
             onClick={toggleTheme}
@@ -186,14 +201,14 @@ export default function App() {
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setCmdOpen(false)}
-              className="fixed inset-0 z-50 cmd-backdrop"
+              className="fixed inset-0 z-[200] cmd-backdrop"
             />
             <motion.div 
               initial={{ opacity: 0, scale: 0.95, y: -20 }} 
               animate={{ opacity: 1, scale: 1, y: 0 }} 
               exit={{ opacity: 0, scale: 0.95, y: -20 }}
               transition={{ duration: 0.15, ease: "easeOut" }}
-              className="fixed top-[15%] left-1/2 -translate-x-1/2 w-[90%] max-w-lg bg-white/80 backdrop-blur-xl border border-neutral-200 rounded-2xl shadow-2xl z-50 overflow-hidden"
+              className={`fixed top-[15%] left-1/2 -translate-x-1/2 w-[90%] max-w-lg ${isDarkMode ? 'bg-neutral-950/80 border-neutral-800' : 'bg-white/80 border-neutral-200'} backdrop-blur-xl border rounded-2xl shadow-2xl z-[200] overflow-hidden`}
             >
               <div className={`flex items-center px-4 py-3 border-b ${isDarkMode ? 'border-neutral-800' : 'border-neutral-100'}`}>
                 <Search size={18} className="text-neutral-400 mr-3" />
@@ -246,45 +261,84 @@ export default function App() {
         {/* Background Grid */}
         <div className="absolute inset-0 bg-grid-pattern z-0 pointer-events-none" />
 
-        <div className="relative z-10 pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto">
+        <div className="relative z-10 pt-32 pb-0 px-6 md:px-12 max-w-7xl mx-auto">
           
           {/* Hero Section */}
           <motion.section 
-            className="min-h-[75vh] flex flex-col justify-center"
+            className="min-h-[75vh] flex flex-col justify-center relative py-12"
             initial="initial" animate="animate" variants={staggerContainer}
           >
-            <motion.div variants={fadeIn} className="mb-8 inline-flex items-center space-x-2 px-3 py-1.5 rounded-full border border-neutral-200 bg-white/50 backdrop-blur-md text-xs font-semibold text-neutral-700 uppercase tracking-wider shadow-sm">
-              <span className="relative flex h-2 w-2">
+            {/* Blueprint Grid Overlay for Hero */}
+            <div className={`absolute inset-0 z-0 opacity-[0.03] pointer-events-none ${isDarkMode ? 'bg-grid-white' : 'bg-grid-black'}`} />
+
+            <motion.div variants={fadeIn} className="mb-8 inline-flex items-center space-x-3 px-6 py-3 rounded-full border border-neutral-200 bg-white/50 backdrop-blur-md text-xs font-bold text-neutral-700 uppercase tracking-[0.2em] shadow-sm">
+              <span className="relative flex h-2.5 w-2.5">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
               </span>
-              <span>J.D. Candidate, Fall 2026</span>
+              <span>J.D. Candidate &middot; Fall 2026</span>
             </motion.div>
             
-            <motion.h1 variants={fadeIn} className="text-6xl md:text-8xl lg:text-[7rem] font-serif font-medium leading-[1.05] tracking-tight max-w-5xl mb-8">
-              Nathan Gruen
-            </motion.h1>
+            <div className="relative">
+              <motion.h1 className="text-5xl md:text-7xl lg:text-[7.5rem] font-serif font-medium leading-none tracking-[-0.07em] max-w-5xl mb-6 relative z-10 flex flex-wrap gap-x-[0.15em]">
+                {"Nathan Gruen".split("").map((char, index) => (
+                  <motion.span
+                    key={index}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ 
+                      delay: index * 0.04 + 0.3,
+                      duration: 0.4,
+                      ease: [0.22, 1, 0.36, 1]
+                    }}
+                    className={char === " " ? "w-[0.2em]" : ""}
+                  >
+                    {char}
+                  </motion.span>
+                ))}
+              </motion.h1>
+              
+              {/* Floating Japanese Calligraphy Accent */}
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 0.15, x: 0 }}
+                transition={{ delay: 1.2, duration: 1.5 }}
+                className="absolute -right-4 md:right-0 top-0 vertical-text text-neutral-400 font-black text-5xl md:text-7xl tracking-[0.4em] pointer-events-none select-none"
+              >
+                ネイサン
+              </motion.div>
+            </div>
             
-            <motion.p variants={fadeIn} className="text-xl md:text-2xl text-neutral-600 max-w-3xl font-light leading-relaxed mb-12">
-              Aspiring attorney focusing on <strong className="font-medium text-neutral-900">Copyright & Trademark Law</strong>. 
-              Bridging the gap in international entertainment with a specialization in Japanese Intellectual Property.
+            <motion.p variants={fadeIn} className="text-lg md:text-2xl text-neutral-500 max-w-2xl font-light leading-relaxed mb-10">
+              Defining the legal architecture of <strong className={`font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Intellectual Property</strong>. 
+              Specializing in the cross-cultural frameworks of Japanese Copyright & Trademark Law.
             </motion.p>
             
-            <motion.div variants={fadeIn} className="flex flex-wrap gap-4">
-              <a href="#about" className="group px-8 py-4 bg-neutral-900 text-white rounded-full font-medium hover:bg-neutral-800 transition-all flex items-center gap-2 shadow-lg shadow-neutral-900/20">
-                Explore Profile <ArrowUpRight size={18} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+            <motion.div variants={fadeIn} className="flex flex-wrap gap-4 items-center mb-12">
+              <a href="#about" className="group px-8 py-4 bg-neutral-900 text-white rounded-full font-medium hover:bg-neutral-800 transition-all flex items-center gap-3 shadow-xl shadow-neutral-900/20 text-sm">
+                Explore Profile <ArrowUpRight size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
               </a>
-              <button onClick={() => setResumeOpen(true)} className="px-8 py-4 bg-white border border-neutral-200 text-neutral-900 rounded-full font-medium hover:bg-neutral-50 transition-all shadow-sm flex items-center gap-2">
+              <button onClick={() => setResumeOpen(true)} className={`px-8 py-4 ${isDarkMode ? 'bg-neutral-800 border-neutral-700 text-white hover:bg-neutral-700' : 'bg-white border-neutral-200 text-neutral-900 hover:bg-neutral-50'} border rounded-full font-medium transition-all shadow-sm flex items-center gap-3 text-sm`}>
                 <BookOpen size={18} /> View Résumé
               </button>
             </motion.div>
 
-            {/* Vertical Japanese Accent */}
+            {/* Scroll Indicator */}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 2, duration: 1 }}
+              className="absolute bottom-0 left-0 flex flex-col items-center gap-4"
+            >
+              <div className="w-px h-12 bg-gradient-to-b from-neutral-400 to-transparent" />
+            </motion.div>
+
+            {/* Vertical Japanese Accent - Repositioned and refined */}
             <motion.div 
               variants={fadeIn}
-              className="absolute right-6 md:right-12 top-1/2 -translate-y-1/2 hidden lg:block"
+              className="absolute right-0 bottom-0 hidden lg:block"
             >
-              <div className="vertical-text text-neutral-300 font-bold text-4xl tracking-[0.5em] uppercase opacity-50 mix-blend-multiply">
+              <div className="vertical-text text-neutral-200 font-bold text-5xl tracking-[0.6em] uppercase opacity-20 mix-blend-multiply select-none">
                 著作権と商標法
               </div>
             </motion.div>
@@ -293,7 +347,7 @@ export default function App() {
           {/* Cinematic Marquee */}
           <motion.div 
             initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-            className="w-screen relative left-1/2 -translate-x-1/2 bg-neutral-900 text-white py-5 mb-24 overflow-hidden flex shadow-2xl"
+            className="w-screen relative left-1/2 -translate-x-1/2 bg-neutral-900 text-white py-4 mb-0 overflow-hidden flex shadow-2xl"
           >
             <div className="animate-marquee whitespace-nowrap flex items-center">
               {[...Array(4)].map((_, i) => (
@@ -307,10 +361,10 @@ export default function App() {
           {/* Bento Grid About Section */}
           <motion.section 
             id="about" 
-            className={`py-24 ${isDarkMode ? 'text-neutral-100' : 'text-neutral-900'}`}
+            className={`py-16 ${isDarkMode ? 'text-neutral-100' : 'text-neutral-900'}`}
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.8 }}
           >
-            <div className="mb-12 flex items-end gap-4">
+            <div className="mb-8 flex items-end gap-4">
               <div>
                 <h2 className="text-3xl font-serif font-medium mb-2">About Me</h2>
                 <p className="text-neutral-500 text-sm uppercase tracking-widest font-semibold">Advocacy & Expertise</p>
@@ -320,12 +374,12 @@ export default function App() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {/* Box 1: The Story */}
-              <div className={`md:col-span-2 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 md:p-10 shadow-sm hover:shadow-md transition-shadow border`}>
-                <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-100'} rounded-2xl flex items-center justify-center mb-6`}>
-                  <Terminal className={isDarkMode ? 'text-white' : 'text-neutral-900'} size={24} />
-                </div>
-                <h3 className="text-2xl font-serif font-medium mb-4">Advocacy & Persistence</h3>
-                <div className={`space-y-4 ${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} leading-relaxed font-light`}>
+              <div className={`md:col-span-2 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 md:p-10 shadow-sm hover:shadow-xl transition-all duration-500 border group relative overflow-hidden`}>
+                {/* Blueprint Grid Overlay */}
+                <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
+                
+                <h3 className="text-2xl font-serif font-medium mb-4 relative z-10">Advocacy & Persistence</h3>
+                <div className={`space-y-4 ${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} leading-relaxed font-light text-base relative z-10`}>
                   <p>
                     My path to the legal profession began with a seemingly impossible request. As a teenager, I noticed a gap in our education: we had a strong focus on memorization and analysis of texts, but no training on how to translate that into actionable knowledge. I approached the dean to establish a semichah (rabbinical ordination) program.
                   </p>
@@ -333,74 +387,115 @@ export default function App() {
                     I was tasked with bringing together students, an instructor, and accreditation. I handled the logistics, synthesized curricula from three different institutions, and negotiated group rates. Eleven months later, thirteen of us sat for a four-hour final exam—and we all passed.
                   </p>
                   <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>
-                    That experience taught me how one person can make a profound difference through advocacy, structure, and persistence. Beyond the classroom, I've dedicated time as a mentor for "My Extended Family" and as a member of my synagogue's choir.
+                    That experience taught me how one person can make a profound difference through advocacy, structure, and persistence.
                   </p>
+                </div>
+                
+                {/* Blueprint Dimension Line */}
+                <div className="mt-6 pt-6 border-t border-neutral-200/10 flex items-center justify-between text-[8px] font-mono text-neutral-400 uppercase tracking-widest relative z-10">
+                  <span>Ref: ADV-2026</span>
+                  <div className="h-px flex-1 mx-4 bg-neutral-200/10" />
+                  <span>Status: Verified</span>
                 </div>
               </div>
 
               {/* Box 2: Japanese IP */}
-              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-900'} text-white rounded-3xl p-8 md:p-10 shadow-lg relative overflow-hidden group border`}>
+              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-900'} text-white rounded-3xl p-8 md:p-10 shadow-2xl relative overflow-hidden group border transition-all duration-500 hover:-translate-y-2`}>
                 <div className="absolute inset-0 bg-gradient-to-br from-neutral-800 to-neutral-900 opacity-50"></div>
                 
-                {/* Decorative background element */}
-                <div className="absolute top-0 right-8 bottom-0 flex items-center opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none select-none">
+                {/* Decorative background element: Intricate Pattern */}
+                <div className="absolute inset-0 opacity-[0.05] group-hover:opacity-[0.1] transition-opacity duration-700 pointer-events-none select-none bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]"></div>
+                
+                <div className="absolute top-0 right-8 bottom-0 flex items-center opacity-[0.03] group-hover:opacity-[0.1] transition-all duration-700 pointer-events-none select-none transform group-hover:scale-110">
                   <div className="text-8xl md:text-[120px] font-black tracking-widest" style={{ writingMode: 'vertical-rl' }}>
                     知的財産
                   </div>
                 </div>
 
-                <div className="relative z-10 h-full flex flex-col justify-end">
-                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm border border-white/10 group-hover:scale-110 transition-transform duration-500">
+                <div className="relative z-10 h-full flex flex-col justify-between">
+                  <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm border border-white/10 group-hover:rotate-12 transition-all duration-500">
                     <Globe className="w-6 h-6 text-white" />
                   </div>
-                  <h3 className="text-2xl font-serif font-medium mb-3">Japanese IP Focus</h3>
-                  <p className="text-white/70 text-sm leading-relaxed">
-                    Currently learning Japanese to bridge the language gap and specialize in Japanese intellectual property within the entertainment sector.
-                  </p>
+                  <div>
+                    <h3 className="text-2xl font-serif font-medium mb-3">Japanese IP Focus</h3>
+                    <p className="text-white/70 text-sm leading-relaxed font-light mb-6">
+                      Bridging the language gap to specialize in Japanese intellectual property within the global entertainment sector.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {['Copyright', 'Trademark', 'Licensing'].map(tag => (
+                        <span key={tag} className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[9px] font-mono uppercase tracking-widest">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
 
               {/* Box 3: NYLS */}
-              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 md:p-10 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group border`}>
+              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group border`}>
+                {/* Blueprint Grid Overlay */}
+                <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
+                
                 {/* Decorative background element */}
-                <div className={`absolute -right-12 -top-12 ${isDarkMode ? 'text-neutral-800' : 'text-neutral-50'} opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none select-none`}>
+                <div className={`absolute -right-12 -top-12 ${isDarkMode ? 'text-neutral-800' : 'text-neutral-50'} opacity-50 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none select-none absolute z-0`}>
                   <GraduationCap size={240} strokeWidth={1} />
                 </div>
 
                 <div className="relative z-10 h-full flex flex-col justify-end">
-                  <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-100'} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500`}>
+                  <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-100'} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 animate-float`} style={{ animationDelay: '1s' }}>
                     <GraduationCap className={`w-6 h-6 ${isDarkMode ? 'text-white' : 'text-neutral-900'}`} />
                   </div>
                   <div>
                     <div className={`inline-block px-2.5 py-1 ${isDarkMode ? 'bg-neutral-800 text-neutral-400' : 'bg-neutral-100 text-neutral-600'} text-xs font-bold rounded mb-3`}>FALL 2026</div>
                     <h3 className="text-2xl font-serif font-medium mb-3">New York Law School</h3>
-                    <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} text-sm leading-relaxed`}>
+                    <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} text-sm leading-relaxed mb-6`}>
                       Attending the J.D. program, building upon a foundation of rigorous textual analysis and complex legal frameworks.
                     </p>
+                    
+                    {/* Blueprint Dimension Line */}
+                    <div className="pt-4 border-t border-neutral-200/10 flex items-center justify-between text-[8px] font-mono text-neutral-400 uppercase tracking-widest">
+                      <span>Ref: NYLS-2026</span>
+                      <div className="h-px flex-1 mx-4 bg-neutral-200/10" />
+                      <span>JD CANDIDATE</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Box 4: Tech & Data */}
-              <div className={`md:col-span-2 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-50 border-neutral-200'} rounded-3xl p-8 md:p-10 shadow-sm hover:shadow-md transition-shadow border`}>
-                <div className="flex items-center gap-4 mb-6">
-                  <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-white border-neutral-100'} rounded-2xl flex items-center justify-center shadow-sm border`}>
-                    <Database className={isDarkMode ? 'text-white' : 'text-neutral-900'} size={24} />
+              <div className={`md:col-span-2 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-50 border-neutral-200'} rounded-3xl p-8 shadow-sm hover:shadow-md transition-shadow border relative overflow-hidden group`}>
+                {/* Blueprint Grid Overlay */}
+                <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
+                
+                <div className="flex flex-col md:flex-row gap-8 relative z-10">
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-serif font-medium mb-3">Data & AI Proficiency</h3>
+                    <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} leading-relaxed font-light text-sm mb-6 max-w-2xl`}>
+                      Unique intersection of legal analysis and technical capability. Completed the <strong className={`font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Google Data Analytics Career Certificate</strong> (SQL, R) and gained proficiency in AI technologies by training <strong className={`font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Stable Diffusion models</strong> for creative asset generation during my design internship.
+                    </p>
                   </div>
-                  <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-white border-neutral-100'} rounded-2xl flex items-center justify-center shadow-sm border`}>
-                    <Code className={isDarkMode ? 'text-white' : 'text-neutral-900'} size={24} />
+                  <div className="flex-1 flex flex-col justify-center">
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {['SQL', 'R', 'Data Analysis', 'Stable Diffusion', 'AI Model Training'].map(skill => (
+                        <span key={skill} className={`px-3 py-1 ${isDarkMode ? 'bg-neutral-800 border-neutral-700 text-neutral-400' : 'bg-white border-neutral-200 text-neutral-600'} border rounded-full text-xs font-medium`}>
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                    <div className={`p-4 rounded-2xl ${isDarkMode ? 'bg-neutral-800/50' : 'bg-white'} border ${isDarkMode ? 'border-neutral-700' : 'border-neutral-100'} text-[10px] font-mono text-neutral-400 leading-relaxed`}>
+                      <span className="text-emerald-500">✓</span> Certification: Google Data Analytics<br />
+                      <span className="text-emerald-500">✓</span> Specialization: Generative AI Models<br />
+                      <span className="text-emerald-500">✓</span> Stack: SQL, R, Python, SDXL
+                    </div>
                   </div>
                 </div>
-                <h3 className="text-2xl font-serif font-medium mb-3">Data & AI Proficiency</h3>
-                <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} leading-relaxed font-light mb-6 max-w-2xl`}>
-                  Unique intersection of legal analysis and technical capability. Completed the <strong className={`font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Google Data Analytics Career Certificate</strong> (SQL, R) and gained proficiency in AI technologies by training <strong className={`font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Stable Diffusion models</strong> for creative asset generation during my design internship.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {['SQL', 'R', 'Data Analysis', 'Stable Diffusion', 'AI Model Training'].map(skill => (
-                    <span key={skill} className={`px-3 py-1 ${isDarkMode ? 'bg-neutral-800 border-neutral-700 text-neutral-400' : 'bg-white border-neutral-200 text-neutral-600'} border rounded-full text-xs font-medium`}>
-                      {skill}
-                    </span>
-                  ))}
+
+                {/* Blueprint Dimension Line */}
+                <div className="pt-6 mt-6 border-t border-neutral-200/10 flex items-center justify-between text-[8px] font-mono text-neutral-400 uppercase tracking-widest relative z-10">
+                  <span>Ref: TECH-2026</span>
+                  <div className="h-px flex-1 mx-4 bg-neutral-200/10" />
+                  <span>AI & DATA STACK</span>
                 </div>
               </div>
             </div>
@@ -484,7 +579,14 @@ export default function App() {
                         CASE FILE: {insight.caseNo}
                       </div>
 
-                      <div className="flex items-center gap-4 mb-4">
+                      {/* Confidential Stamp */}
+                      <div className={`absolute top-1/2 right-12 -translate-y-1/2 opacity-[0.02] group-hover:opacity-[0.05] transition-opacity -rotate-12 pointer-events-none select-none z-0`}>
+                        <div className={`border-4 ${isDarkMode ? 'border-white' : 'border-neutral-900'} px-4 py-2 rounded-lg text-6xl font-black uppercase tracking-tighter`}>
+                          CONFIDENTIAL
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 mb-4 relative z-10">
                         <span className="text-[10px] font-mono text-neutral-400">{insight.date}</span>
                         <span className={`px-2 py-0.5 text-[9px] font-bold rounded uppercase tracking-wider ${
                           isDarkMode ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'
@@ -550,8 +652,8 @@ export default function App() {
                 })}
               </div>
 
-              {/* Japanese IP Dossier Card */}
-              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-50 border-neutral-200'} rounded-[2.5rem] p-8 md:p-12 border relative overflow-hidden group shadow-2xl`}>
+              {/* Japanese IP Practice Card */}
+              <div className={`h-full flex flex-col ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-50 border-neutral-200'} rounded-[2.5rem] p-8 md:p-12 border relative overflow-hidden group shadow-2xl`}>
                 {/* Decorative Background: Japanese Calligraphy */}
                 <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity duration-700 pointer-events-none select-none">
                   <div className="text-[180px] font-black tracking-widest leading-none" style={{ writingMode: 'vertical-rl' }}>
@@ -559,7 +661,7 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="relative z-10">
+                <div className="relative z-10 flex flex-col h-full">
                   <div className="flex items-center gap-4 mb-8">
                     <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transform group-hover:rotate-12 transition-transform duration-500 ${
                       isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-white border-neutral-100'
@@ -570,7 +672,7 @@ export default function App() {
                       <div className={`inline-block px-3 py-1 ${isDarkMode ? 'bg-white text-neutral-900' : 'bg-neutral-900 text-white'} text-[10px] font-bold rounded-full mb-1 tracking-widest uppercase`}>
                         Specialization
                       </div>
-                      <h3 className="text-3xl font-serif font-medium">Japanese IP Dossier</h3>
+                      <h3 className="text-3xl font-serif font-medium">Japanese IP Practice</h3>
                     </div>
                   </div>
 
@@ -578,7 +680,7 @@ export default function App() {
                     Navigating the unique legal intersection where Japanese creative heritage meets global market frameworks.
                   </p>
 
-                  <div className="space-y-4">
+                  <div className="space-y-4 flex-1">
                     {[
                       { id: "jp-manga", title: "Manga & Anime Licensing", desc: "International distribution & sub-licensing frameworks.", icon: "📚", brief: "Licensing isn't just a contract; it's a cultural transmission protocol. We aren't just selling 'content'; we're exporting a narrative architecture that defines how the world perceives Japanese creativity. The legal challenge is ensuring the integrity of the 'Source Code' while allowing for the 'Forking' of local adaptations." },
                       { id: "jp-char", title: "Character Rights", desc: "Global protection of iconic Japanese IP assets.", icon: "👾", brief: "A character is more than a drawing; it's a set of behaviors, a history, and a brand promise. In the age of digital replication, we must protect the 'Essence' of the IP. This means legal frameworks that recognize the character as a living asset, capable of evolving across media while remaining anchored to its origin." },
@@ -636,7 +738,7 @@ export default function App() {
                   </div>
 
                   {/* Blueprint Dimension Line at bottom */}
-                  <div className="mt-12 pt-8 border-t border-neutral-200/10 flex items-center justify-between text-[8px] font-mono text-neutral-500 uppercase tracking-widest">
+                  <div className="mt-6 pt-6 border-t border-neutral-200/10 flex items-center justify-between text-[8px] font-mono text-neutral-500 uppercase tracking-widest">
                     <span>Ref: J-IP-2026</span>
                     <div className="h-px flex-1 mx-4 bg-neutral-200/10" />
                     <span>Verified: 100%</span>
@@ -662,25 +764,29 @@ export default function App() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Featured Book */}
-              <div className={`col-span-1 md:col-span-2 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-900'} text-white rounded-3xl p-8 md:p-12 relative overflow-hidden group border shadow-2xl`}>
-                <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-white/10 transition-colors duration-700"></div>
-                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+              <div className={`col-span-1 md:col-span-2 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-900'} text-white rounded-3xl p-8 md:p-16 relative overflow-hidden group border shadow-2xl transition-all duration-700`}>
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -mr-40 -mt-40 group-hover:bg-white/10 transition-colors duration-700"></div>
+                
+                {/* Blueprint Grid Overlay */}
+                <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-grid-white" />
+
+                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                   <div>
-                    <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full border border-white/20 bg-white/10 text-xs font-medium text-white uppercase tracking-wider mb-6">
+                    <div className="inline-flex items-center space-x-2 px-4 py-1.5 rounded-full border border-white/20 bg-white/10 text-[10px] font-bold text-white uppercase tracking-[0.2em] mb-8">
                       <BookOpen size={14} />
                       <span>Forthcoming Publication</span>
                     </div>
-                    <h3 className="text-3xl md:text-5xl font-serif font-medium mb-4">The Kohen's Treasure</h3>
-                    <p className="text-white/70 text-lg font-light leading-relaxed mb-6">
+                    <h3 className="text-4xl md:text-6xl font-serif font-medium mb-6 leading-tight">The Kohen's <br /> Treasure</h3>
+                    <p className="text-white/70 text-xl font-light leading-relaxed mb-8">
                       A full-length novel co-authored with Dr. Benny Gruen, published by ArtScroll Mesorah Publications—the leading publisher of Jewish literature worldwide.
                     </p>
                     
                     <button 
                       onClick={() => setIsBookExpanded(!isBookExpanded)}
-                      className="flex items-center gap-2 text-xs font-bold text-white/40 hover:text-white transition-colors uppercase tracking-widest mb-4"
+                      className="flex items-center gap-3 text-xs font-bold text-white/40 hover:text-white transition-all uppercase tracking-[0.3em] mb-6 group/btn"
                     >
                       {isBookExpanded ? 'Hide Synopsis' : 'View Synopsis'} 
-                      <ChevronRight size={14} className={`transition-transform ${isBookExpanded ? 'rotate-90' : ''}`} />
+                      <ChevronRight size={16} className={`transition-transform duration-300 ${isBookExpanded ? 'rotate-90' : 'group-hover/btn:translate-x-1'}`} />
                     </button>
 
                     <AnimatePresence>
@@ -691,46 +797,72 @@ export default function App() {
                           exit={{ height: 0, opacity: 0 }}
                           className="overflow-hidden"
                         >
-                          <p className="text-white/50 text-sm leading-relaxed mb-6 p-4 bg-white/5 rounded-2xl border border-white/10 italic">
-                            Blending historical fiction and religious thriller, the narrative follows a young man who uncovers a two-thousand-year-old cipher tied to the destruction of the Second Temple, exploring questions of faith, heritage, and identity.
-                          </p>
+                          <div className="p-6 rounded-2xl mb-8 bg-white/5 border border-white/10 backdrop-blur-sm relative">
+                            <div className="absolute top-4 right-4 opacity-10">
+                              <FileText size={40} />
+                            </div>
+                            <p className="text-white/60 text-base leading-relaxed italic font-light">
+                              Blending historical fiction and religious thriller, the narrative follows a young man who uncovers a two-thousand-year-old cipher tied to the destruction of the Second Temple, exploring questions of faith, heritage, and identity.
+                            </p>
+                          </div>
                         </motion.div>
                       )}
                     </AnimatePresence>
                   </div>
-                  <div className="hidden lg:flex justify-end">
-                    <div className="w-56 h-80 bg-gradient-to-br from-white/10 to-white/5 border border-white/20 rounded-lg flex items-center justify-center shadow-2xl transform rotate-3 group-hover:rotate-6 group-hover:scale-105 transition-all duration-500 backdrop-blur-sm">
-                      <BookOpen className="w-16 h-16 text-white/30" />
-                    </div>
+                  <div className="hidden lg:flex justify-end perspective-1000">
+                    <motion.div 
+                      whileHover={{ rotateY: -20, rotateX: 10, scale: 1.05 }}
+                      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                      className="w-64 h-96 bg-gradient-to-br from-neutral-800 to-neutral-900 border border-white/20 rounded-lg flex flex-col items-center justify-center shadow-[20px_20px_60px_rgba(0,0,0,0.5)] relative overflow-hidden group/book"
+                    >
+                      {/* Book Spine Detail */}
+                      <div className="absolute left-0 top-0 bottom-0 w-4 bg-black/40 border-r border-white/10" />
+                      
+                      <BookOpen className="w-20 h-20 text-white/20 group-hover/book:text-white/40 transition-colors duration-500" />
+                      
+                      <div className="absolute bottom-8 left-8 right-8 text-center">
+                        <div className="h-px w-full bg-white/10 mb-4" />
+                        <p className="text-[10px] font-mono uppercase tracking-[0.4em] text-white/30">ArtScroll</p>
+                      </div>
+                      
+                      {/* Glossy Overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/5 to-white/10 pointer-events-none" />
+                    </motion.div>
                   </div>
                 </div>
               </div>
 
               {/* Other Projects */}
-              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 hover:shadow-md transition-shadow border`}>
-                <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-50'} rounded-full flex items-center justify-center mb-6 border ${isDarkMode ? 'border-neutral-700' : 'border-neutral-100'}`}>
+              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 hover:shadow-md transition-shadow border relative overflow-hidden group`}>
+                {/* Blueprint Grid Overlay */}
+                <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
+                
+                <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-50'} rounded-full flex items-center justify-center mb-6 border ${isDarkMode ? 'border-neutral-700' : 'border-neutral-100'} group-hover:scale-110 transition-transform duration-500 relative z-10`}>
                   <PenTool className={`w-6 h-6 ${isDarkMode ? 'text-white' : 'text-neutral-900'}`} />
                 </div>
-                <h3 className="text-xl font-medium mb-2">Self-Published Author</h3>
-                <p className="text-neutral-400 font-mono text-xs mb-4">2020 – Present</p>
-                <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} text-sm leading-relaxed`}>
+                <h3 className="text-xl font-medium mb-2 relative z-10">Self-Published Author</h3>
+                <p className="text-neutral-400 font-mono text-xs mb-4 relative z-10">2020 – Present</p>
+                <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} text-sm leading-relaxed relative z-10`}>
                   Authored and self-published four full-length novels spanning Romantic Comedy, Teen Mental Health, and Fantasy genres. Managed the entire publication lifecycle from drafting to distribution.
                 </p>
               </div>
 
-              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 hover:shadow-md transition-shadow border`}>
-                <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-50'} rounded-full flex items-center justify-center mb-6 border ${isDarkMode ? 'border-neutral-700' : 'border-neutral-100'}`}>
+              <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-3xl p-8 hover:shadow-md transition-shadow border relative overflow-hidden group`}>
+                {/* Blueprint Grid Overlay */}
+                <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
+                
+                <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-50'} rounded-full flex items-center justify-center mb-6 border ${isDarkMode ? 'border-neutral-700' : 'border-neutral-100'} group-hover:scale-110 transition-transform duration-500 relative z-10`}>
                   <Mic className={`w-6 h-6 ${isDarkMode ? 'text-white' : 'text-neutral-900'}`} />
                 </div>
-                <h3 className="text-xl font-medium mb-2">Freelance Voice Actor</h3>
-                <p className="text-neutral-400 font-mono text-xs mb-4">2021 – 2024</p>
-                <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} text-sm leading-relaxed`}>
+                <h3 className="text-xl font-medium mb-2 relative z-10">Freelance Voice Actor</h3>
+                <p className="text-neutral-400 font-mono text-xs mb-4 relative z-10">2021 – 2024</p>
+                <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} text-sm leading-relaxed relative z-10`}>
                   Contributed vocal performances to various digital media projects, reaching a global audience of over 14 million viewers.
                 </p>
               </div>
 
               {/* Arcade Card */}
-              <div className="col-span-1 md:col-span-2 mt-8">
+              <div id="canvas" className="col-span-1 md:col-span-2 mt-8">
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-2xl font-serif font-medium mb-1">Interactive Playground</h3>
@@ -749,32 +881,54 @@ export default function App() {
           {/* Contact Section */}
           <motion.section 
             id="contact" 
-            className={`py-24 border-t ${isDarkMode ? 'border-neutral-800' : 'border-neutral-200'}`}
+            className={`py-32 border-t ${isDarkMode ? 'border-neutral-800' : 'border-neutral-200'} relative overflow-hidden`}
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.8 }}
           >
-            <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-50 border-neutral-200'} rounded-[2.5rem] p-8 md:p-16 text-center max-w-4xl mx-auto relative overflow-hidden border`}>
-              <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-${isDarkMode ? 'neutral-700' : 'neutral-300'} to-transparent opacity-50`}></div>
+            {/* Background Accent */}
+            <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] ${isDarkMode ? 'bg-blue-900/5' : 'bg-blue-50/30'} rounded-full blur-[120px] pointer-events-none z-0`} />
+
+            <div className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-[3rem] p-8 md:p-20 text-center max-w-5xl mx-auto relative z-10 border shadow-2xl overflow-hidden`}>
+              {/* Blueprint Grid Overlay */}
+              <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
               
-              <div className="text-neutral-300 font-bold text-2xl mb-4">連絡先</div>
-              <h2 className={`text-4xl md:text-5xl font-serif font-medium mb-6 ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Let's Connect</h2>
-              <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-600'} text-lg font-light mb-12 max-w-2xl mx-auto`}>
-                Whether you're interested in discussing intellectual property law, creative projects, or opportunities in the entertainment sector, I'd love to hear from you.
-              </p>
+              <div className="mb-12 relative z-10">
+                <div className="text-neutral-300 font-bold text-3xl mb-4 opacity-40 select-none">連絡先</div>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-8">
+                  Closing Statement
+                </div>
+                <h2 className={`text-5xl md:text-7xl font-serif font-medium mb-8 ${isDarkMode ? 'text-white' : 'text-neutral-900'} tracking-tight`}>Let's Connect</h2>
+                <p className={`${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'} text-xl font-light mb-16 max-w-3xl mx-auto leading-relaxed`}>
+                  Whether you're interested in discussing intellectual property law, creative projects, or opportunities in the entertainment sector, I'd love to hear from you.
+                </p>
+              </div>
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-3xl mx-auto relative z-10">
                 <CopyButton text="naftaligruen@gmail.com" label="Email Address" icon={Mail} isDarkMode={isDarkMode} />
                 <CopyButton text="646-415-3514" label="Phone Number" icon={Phone} isDarkMode={isDarkMode} />
-                <div className={`sm:col-span-2 flex items-center justify-between w-full p-4 ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-white border-neutral-200'} border rounded-2xl text-left`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 ${isDarkMode ? 'bg-neutral-700 text-white' : 'bg-neutral-50 text-neutral-900'} rounded-full flex items-center justify-center`}>
-                      <MapPin size={18} />
+                <div className={`sm:col-span-2 flex items-center justify-between w-full p-6 ${isDarkMode ? 'bg-neutral-800 border-neutral-700' : 'bg-neutral-50 border-neutral-100'} border rounded-[2rem] text-left group hover:shadow-md transition-all relative overflow-hidden`}>
+                  {/* Blueprint Grid Overlay */}
+                  <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-grid-pattern" />
+                  
+                  <div className="flex items-center gap-6 relative z-10">
+                    <div className={`w-12 h-12 ${isDarkMode ? 'bg-neutral-700 text-white' : 'bg-white text-neutral-900'} rounded-2xl flex items-center justify-center shadow-sm border border-neutral-200/10 group-hover:scale-110 transition-transform duration-500`}>
+                      <MapPin size={22} className="text-blue-500" />
                     </div>
                     <div>
-                      <p className="text-xs text-neutral-500 font-medium uppercase tracking-wider">Location</p>
-                      <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Brooklyn, NY</p>
+                      <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-[0.2em] mb-1">Base of Operations</p>
+                      <p className={`text-lg font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Brooklyn, New York</p>
                     </div>
                   </div>
+                  <div className="hidden sm:block relative z-10">
+                    <div className="text-[8px] font-mono text-neutral-400 uppercase tracking-widest">EST (UTC-5)</div>
+                  </div>
                 </div>
+              </div>
+
+              {/* Blueprint Dimension Line at bottom */}
+              <div className="mt-20 pt-10 border-t border-neutral-200/10 flex items-center justify-between text-[8px] font-mono text-neutral-500 uppercase tracking-widest">
+                <span>Ref: CONTACT-2026</span>
+                <div className="h-px flex-1 mx-8 bg-neutral-200/10" />
+                <span>End of Brief</span>
               </div>
             </div>
           </motion.section>

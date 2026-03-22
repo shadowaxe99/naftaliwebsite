@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export type GameType = 'brick' | 'galaga' | 'zen' | 'koi' | 'sakura' | 'tetris' | 'lanterns' | 'bonsai' | 'hanafuda' | 'karuta' | 'menko' | 'infringement';
+export type GameType = 'brick' | 'galaga' | 'zen' | 'koi' | 'sakura' | 'tetris' | 'lanterns' | 'bonsai' | 'hanafuda' | 'karuta' | 'menko' | 'infringement' | 'daifugo' | 'oichokabu';
 
 let globalAudioCtx: AudioContext | null = null;
 
@@ -184,7 +184,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     window.addEventListener('resize', resize);
     resize();
 
-    const mouse = { x: canvas.width / 2, y: canvas.height / 2, clicked: false };
+    const mouse = { x: canvas.width / 2, y: canvas.height / 2, clicked: false, down: false };
     let lastMouse = { x: mouse.x, y: mouse.y };
     let firstMove = true;
 
@@ -200,8 +200,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       mouse.x = x;
       mouse.y = y;
     };
-    const handleMouseDown = () => { mouse.clicked = true; };
-    const handleMouseUp = () => { mouse.clicked = false; };
+    const handleMouseDown = () => { mouse.clicked = true; mouse.down = true; };
+    const handleMouseUp = () => { mouse.clicked = false; mouse.down = false; };
 
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mousedown', handleMouseDown);
@@ -283,6 +283,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     // 4. Koi Pond
     let kois: { x: number, y: number, vx: number, vy: number, size: number, color: string, angle: number }[] = [];
     let ripples: { x: number, y: number, r: number, maxR: number, alpha: number }[] = [];
+    let koiFood: { x: number, y: number, life: number }[] = [];
     const initKoi = () => {
       kois = [];
       const colors = ['#FF4500', '#FFA500', '#FFFFFF', '#000000', '#FF6347'];
@@ -394,11 +395,29 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       { name: "Iris", jp: "菖蒲", symbol: "🌿" },
       { name: "Peony", jp: "牡丹", symbol: "🌺" }
     ];
-    let hanafudaCards: { id: number, month: number, x: number, y: number, w: number, h: number, flipped: boolean, matched: boolean, color: string, symbol: string, jp: string }[] = [];
+    let hanafudaCards: { 
+      id: number, 
+      month: number, 
+      x: number, 
+      y: number, 
+      w: number, 
+      h: number, 
+      flipped: boolean, 
+      matched: boolean, 
+      color: string, 
+      symbol: string, 
+      jp: string,
+      flipAnim: number,
+      scale: number
+    }[] = [];
     let hanafudaSelected: number[] = [];
+    let hanafudaScore = 0;
+    let hanafudaMoves = 0;
     const initHanafuda = () => {
       hanafudaCards = [];
       hanafudaSelected = [];
+      hanafudaScore = 0;
+      hanafudaMoves = 0;
       const cardW = 55, cardH = 80;
       const colors = ['#f87171', '#fbbf24', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'];
       
@@ -428,7 +447,9 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           w: cardW,
           h: cardH,
           flipped: false,
-          matched: false
+          matched: false,
+          flipAnim: 0, // 0 = back, 1 = front
+          scale: 1
         });
       });
     };
@@ -436,6 +457,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     // 10. Karuta (Poetry Cards)
     let karutaReadingCard: { read: string, grab: string } | null = null;
     let karutaCards: { text: string, x: number, y: number, w: number, h: number, correct: boolean, found: boolean }[] = [];
+    let karutaScore = 0;
     const karutaData = [
       { read: "A", grab: "あ" }, { read: "I", grab: "い" }, { read: "U", grab: "う" },
       { read: "E", grab: "え" }, { read: "O", grab: "お" }, { read: "KA", grab: "か" },
@@ -470,6 +492,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     // 11. Menko (Card Flipping)
     let menkoPlayerCard = { x: 0, y: 0, w: 60, h: 60, vx: 0, vy: 0, active: false, rotation: 0, spin: 0 };
     let menkoTargetCard = { x: 0, y: 0, w: 70, h: 70, flipped: false, angle: 0, flipProgress: 0 };
+    let menkoScore = 0;
     const initMenko = () => {
       menkoTargetCard = { 
         x: canvas.width / 2 - 35, 
@@ -500,44 +523,60 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     };
 
     // 8. Bonsai
-    let branches: { x: number, y: number, length: number, angle: number, width: number, generation: number }[] = [];
-    let leaves: { x: number, y: number, size: number, color: string, alpha: number }[] = [];
+    let branches: { x: number, y: number, length: number, angle: number, width: number, generation: number, targetAngle: number, currentAngle: number }[] = [];
+    let leaves: { x: number, y: number, size: number, color: string, alpha: number, falling: boolean, vx: number, vy: number, rotation: number }[] = [];
     let bonsaiInitialized = false;
+    let bonsaiTime = 0;
+
     const growBonsai = (x: number, y: number, length: number, angle: number, width: number, generation: number) => {
-      if (generation > 6) {
+      if (generation > 7) {
         // Add leaves at the end of branches
-        for (let i = 0; i < 5; i++) {
-          const isBlossom = Math.random() > 0.8;
+        for (let i = 0; i < 6; i++) {
+          const isBlossom = Math.random() > 0.85;
           leaves.push({
-            x: x + (Math.random() - 0.5) * 30,
-            y: y + (Math.random() - 0.5) * 30,
-            size: 4 + Math.random() * 6,
+            x: x + (Math.random() - 0.5) * 40,
+            y: y + (Math.random() - 0.5) * 40,
+            size: 4 + Math.random() * 8,
             color: isBlossom ? '#fda4af' : (Math.random() > 0.5 ? '#4ade80' : '#22c55e'),
-            alpha: 0
+            alpha: 0,
+            falling: false,
+            vx: 0,
+            vy: 0,
+            rotation: Math.random() * Math.PI * 2
           });
         }
         return;
       }
-      branches.push({ x, y, length, angle, width, generation });
-      const endX = x + Math.cos(angle) * length;
-      const endY = y + Math.sin(angle) * length;
+      
+      const targetAngle = angle + (Math.random() - 0.5) * 0.5;
+      branches.push({ x, y, length, angle: targetAngle, width, generation, targetAngle, currentAngle: angle });
+      
+      const endX = x + Math.cos(targetAngle) * length;
+      const endY = y + Math.sin(targetAngle) * length;
       
       setTimeout(() => {
         if (!isRunning || gameType !== 'bonsai') return;
-        const numBranches = generation === 1 ? 3 : 2;
+        const numBranches = generation === 1 ? 3 : (Math.random() > 0.3 ? 2 : 1);
         for (let i = 0; i < numBranches; i++) {
-          const newAngle = angle + (Math.random() - 0.5) * 1.2;
           const newLength = length * (0.7 + Math.random() * 0.2);
+          const newAngle = targetAngle + (Math.random() - 0.5) * 1.2;
           growBonsai(endX, endY, newLength, newAngle, width * 0.75, generation + 1);
         }
-      }, 200);
+      }, 150 + Math.random() * 100);
     };
 
     const initBonsai = () => {
       branches = [];
-      leaves = [];
+      // Make existing leaves fall instead of clearing them instantly
+      leaves.forEach(l => {
+        l.falling = true;
+        l.vx = (Math.random() - 0.5) * 2;
+        l.vy = 1 + Math.random() * 2;
+      });
       bonsaiInitialized = true;
-      growBonsai(canvas.width / 2, canvas.height, canvas.height * 0.25, -Math.PI / 2, 20, 1);
+      bonsaiTime = 0;
+      playTone(200, 'sine', 0.5);
+      growBonsai(canvas.width / 2, canvas.height, canvas.height * 0.22, -Math.PI / 2, 24, 1);
     };
 
     // 11. Infringement (Whack-a-Mole)
@@ -584,6 +623,118 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       spawnInfringement();
     };
 
+    // 12. Daifugo (Grand Millionaire - Simplified)
+    let daifugoDeck: number[] = [];
+    let daifugoPlayerHand: number[] = [];
+    let daifugoAIHand: number[] = [];
+    let daifugoPile: number[] = [];
+    let daifugoTurn: 'player' | 'ai' = 'player';
+    let daifugoGameOver = false;
+    let daifugoMessage = '';
+    let daifugoWins = 0;
+    let daifugoLosses = 0;
+
+    const initDaifugo = () => {
+      daifugoDeck = [];
+      for (let i = 1; i <= 13; i++) {
+        daifugoDeck.push(i, i, i, i); // 4 suits
+      }
+      daifugoDeck.sort(() => Math.random() - 0.5);
+      
+      daifugoPlayerHand = daifugoDeck.splice(0, 7).sort((a, b) => a - b);
+      daifugoAIHand = daifugoDeck.splice(0, 7).sort((a, b) => a - b);
+      daifugoPile = [];
+      daifugoTurn = 'player';
+      daifugoGameOver = false;
+      daifugoMessage = 'Your turn! Play a higher card.';
+    };
+
+    const playDaifugoAI = () => {
+      if (daifugoGameOver) return;
+      setTimeout(() => {
+        const topCard = daifugoPile.length > 0 ? daifugoPile[daifugoPile.length - 1] : 0;
+        // Find lowest card higher than topCard
+        const playableIdx = daifugoAIHand.findIndex(c => c > topCard);
+        
+        if (playableIdx !== -1) {
+          const card = daifugoAIHand.splice(playableIdx, 1)[0];
+          daifugoPile.push(card);
+          daifugoMessage = `AI played ${card}. Your turn!`;
+          playTone(300, 'sine', 0.1);
+        } else {
+          daifugoMessage = `AI passed. Your turn!`;
+          daifugoPile = []; // Clear pile on pass
+          playTone(200, 'triangle', 0.1);
+        }
+        
+        if (daifugoAIHand.length === 0) {
+          daifugoGameOver = true;
+          daifugoLosses++;
+          daifugoMessage = 'AI Wins! Click to restart.';
+          playTone(150, 'sawtooth', 0.5);
+        } else {
+          daifugoTurn = 'player';
+        }
+      }, 1000);
+    };
+
+    // 13. Oicho-Kabu
+    let oichoDeck: number[] = [];
+    let oichoPlayerHand: number[] = [];
+    let oichoDealerHand: number[] = [];
+    let oichoState: 'betting' | 'playerTurn' | 'dealerTurn' | 'gameOver' = 'playerTurn';
+    let oichoMessage = '';
+    let oichoChips = 100;
+
+    const initOichokabu = () => {
+      oichoDeck = [];
+      for (let i = 1; i <= 10; i++) {
+        oichoDeck.push(i, i, i, i); // 4 suits
+      }
+      oichoDeck.sort(() => Math.random() - 0.5);
+      
+      oichoPlayerHand = [oichoDeck.pop()!, oichoDeck.pop()!];
+      oichoDealerHand = [oichoDeck.pop()!, oichoDeck.pop()!];
+      oichoState = 'playerTurn';
+      oichoMessage = 'Draw a 3rd card or Stand?';
+    };
+
+    const getOichoScore = (hand: number[]) => {
+      return hand.reduce((a, b) => a + b, 0) % 10;
+    };
+
+    const resolveOichokabu = () => {
+      oichoState = 'gameOver';
+      const pScore = getOichoScore(oichoPlayerHand);
+      const dScore = getOichoScore(oichoDealerHand);
+      
+      if (pScore > dScore) {
+        oichoChips += 10;
+        oichoMessage = `You win! ${pScore} vs ${dScore}. Click to restart.`;
+        playTone(600, 'sine', 0.3);
+      } else if (dScore > pScore) {
+        oichoChips -= 10;
+        oichoMessage = `Dealer wins! ${dScore} vs ${pScore}. Click to restart.`;
+        playTone(200, 'sawtooth', 0.3);
+      } else {
+        oichoMessage = `Tie! ${pScore} vs ${dScore}. Click to restart.`;
+        playTone(400, 'triangle', 0.3);
+      }
+    };
+
+    const playOichoDealer = () => {
+      oichoState = 'dealerTurn';
+      setTimeout(() => {
+        const dScore = getOichoScore(oichoDealerHand);
+        if (dScore < 5) {
+          oichoDealerHand.push(oichoDeck.pop()!);
+          daifugoMessage = 'Dealer drew a card.';
+          playTone(300, 'sine', 0.1);
+        }
+        setTimeout(resolveOichokabu, 1000);
+      }, 1000);
+    };
+
     // Initialize selected game
     if (gameType === 'brick') initBricks();
     if (gameType === 'galaga') initEnemies();
@@ -596,6 +747,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     if (gameType === 'karuta') initKaruta();
     if (gameType === 'menko') initMenko();
     if (gameType === 'infringement') initInfringement();
+    if (gameType === 'daifugo') initDaifugo();
+    if (gameType === 'oichokabu') initOichokabu();
 
     const handleCanvasClick = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
@@ -660,29 +813,110 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       if (gameType === 'tetris') {
         rotateTetrisBlock();
         playTone(400, 'triangle', 0.05);
+      } else if (gameType === 'daifugo') {
+        if (daifugoGameOver) {
+          initDaifugo();
+          return;
+        }
+        if (daifugoTurn !== 'player') return;
+
+        // Check if player clicked a card in hand
+        const cardW = 40;
+        const cardH = 60;
+        const spacing = 10;
+        const totalW = daifugoPlayerHand.length * (cardW + spacing) - spacing;
+        const startX = (canvas.width - totalW) / 2;
+        const startY = canvas.height - cardH - 20;
+
+        for (let i = 0; i < daifugoPlayerHand.length; i++) {
+          const cx = startX + i * (cardW + spacing);
+          const cy = startY;
+          if (x >= cx && x <= cx + cardW && y >= cy && y <= cy + cardH) {
+            const card = daifugoPlayerHand[i];
+            const topCard = daifugoPile.length > 0 ? daifugoPile[daifugoPile.length - 1] : 0;
+            
+            if (card > topCard) {
+              daifugoPlayerHand.splice(i, 1);
+              daifugoPile.push(card);
+              daifugoMessage = `You played ${card}. AI's turn...`;
+              playTone(400, 'sine', 0.1);
+              
+              if (daifugoPlayerHand.length === 0) {
+                daifugoGameOver = true;
+                daifugoWins++;
+                daifugoMessage = 'You Win! Click to restart.';
+                playTone(600, 'triangle', 0.5);
+              } else {
+                daifugoTurn = 'ai';
+                playDaifugoAI();
+              }
+            } else {
+              daifugoMessage = `Must play higher than ${topCard}!`;
+              playTone(150, 'sawtooth', 0.1);
+            }
+            return;
+          }
+        }
+
+        // Pass button
+        if (x >= canvas.width / 2 - 40 && x <= canvas.width / 2 + 40 && y >= canvas.height / 2 + 20 && y <= canvas.height / 2 + 50) {
+          daifugoMessage = 'You passed. AI\'s turn...';
+          daifugoPile = []; // Clear pile on pass
+          daifugoTurn = 'ai';
+          playTone(200, 'triangle', 0.1);
+          playDaifugoAI();
+        }
+      } else if (gameType === 'oichokabu') {
+        if (oichoState === 'gameOver') {
+          initOichokabu();
+          return;
+        }
+        if (oichoState !== 'playerTurn') return;
+
+        // Draw button
+        if (x >= canvas.width / 2 - 60 && x <= canvas.width / 2 - 10 && y >= canvas.height / 2 + 20 && y <= canvas.height / 2 + 50) {
+          if (oichoPlayerHand.length < 3) {
+            oichoPlayerHand.push(oichoDeck.pop()!);
+            playTone(400, 'sine', 0.1);
+            if (oichoPlayerHand.length === 3) {
+              playOichoDealer();
+            }
+          }
+        }
+        // Stand button
+        if (x >= canvas.width / 2 + 10 && x <= canvas.width / 2 + 60 && y >= canvas.height / 2 + 20 && y <= canvas.height / 2 + 50) {
+          playTone(300, 'triangle', 0.1);
+          playOichoDealer();
+        }
       } else if (gameType === 'hanafuda') {
-        if (hanafudaSelected.length >= 2) return; // Prevent clicking while evaluating
+        if (hanafudaSelected.length >= 2) return; 
         const clickedCard = hanafudaCards.find(c => !c.matched && !c.flipped && x > c.x && x < c.x + c.w && y > c.y && y < c.y + c.h);
         if (clickedCard) {
           clickedCard.flipped = true;
+          clickedCard.scale = 1.2;
           hanafudaSelected.push(clickedCard.id);
           playTone(600, 'triangle', 0.05);
           if (hanafudaSelected.length === 2) {
+            hanafudaMoves++;
             const [id1, id2] = hanafudaSelected;
             if (hanafudaCards[id1].month === hanafudaCards[id2].month) {
-              hanafudaCards[id1].matched = true;
-              hanafudaCards[id2].matched = true;
-              hanafudaSelected = [];
-              shake(5);
-              spawnParticles(x, y, '#fbbf24');
-              playTone(800, 'sine', 0.2);
+              setTimeout(() => {
+                hanafudaCards[id1].matched = true;
+                hanafudaCards[id2].matched = true;
+                hanafudaScore += 10;
+                hanafudaSelected = [];
+                shake(15);
+                spawnParticles(hanafudaCards[id1].x + 25, hanafudaCards[id1].y + 40, '#fbbf24');
+                spawnParticles(hanafudaCards[id2].x + 25, hanafudaCards[id2].y + 40, '#fbbf24');
+                playTone(800, 'sine', 0.2);
+              }, 400);
             } else {
               playTone(200, 'triangle', 0.2);
               setTimeout(() => {
                 hanafudaCards[id1].flipped = false;
                 hanafudaCards[id2].flipped = false;
                 hanafudaSelected = [];
-              }, 500);
+              }, 800);
             }
           }
         }
@@ -691,11 +925,13 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         if (clickedCard) {
           if (clickedCard.correct) {
             clickedCard.found = true;
+            karutaScore += 10;
             shake(10);
             spawnParticles(x, y, '#10b981');
             playTone(800, 'sine', 0.2);
             setTimeout(initKaruta, 1000);
           } else {
+            karutaScore = Math.max(0, karutaScore - 5);
             shake(5);
             spawnParticles(x, y, '#ef4444');
             playTone(150, 'triangle', 0.3);
@@ -844,7 +1080,6 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           }
         });
         if (activeBricks === 0) initBricks();
-
       } else if (gameType === 'galaga') {
         // Starfield
         ctx.fillStyle = '#ffffff';
@@ -891,11 +1126,13 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
 
         let hitEdge = false;
         let activeEnemies = 0;
+        let anyEnemyOffBottom = false;
         enemies.forEach(e => {
           if (!e.active) return;
           activeEnemies++;
           e.x += enemyDir;
           if (e.x + e.w > canvas.width || e.x < 0) hitEdge = true;
+          if (e.y > canvas.height) anyEnemyOffBottom = true;
 
           ctx.fillStyle = '#ef4444';
           ctx.beginPath();
@@ -923,7 +1160,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           enemies.forEach(e => { if (e.active) e.y += 20; });
           playTone(200, 'triangle', 0.1);
         }
-        if (activeEnemies === 0) {
+        if (activeEnemies === 0 || anyEnemyOffBottom) {
           initEnemies();
           shake(15);
           playTone(150, 'sawtooth', 0.5);
@@ -934,7 +1171,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         const dy = mouse.y - lastMouse.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         
-        if (dist > 2) {
+        if (dist > 2 && mouse.down) {
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
           ctx.lineWidth = 3;
           ctx.lineCap = 'round';
@@ -949,11 +1186,11 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
             ctx.lineTo(mouse.x + nx * i * spacing, mouse.y + ny * i * spacing);
             ctx.stroke();
           }
-          lastMouse = { x: mouse.x, y: mouse.y };
           if (Math.random() > 0.8) {
             playNoise(0.01, 0.05);
           }
         }
+        lastMouse = { x: mouse.x, y: mouse.y };
 
         if (mouse.clicked) {
           const rand = Math.random();
@@ -1044,6 +1281,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
 
         if (mouse.clicked) {
           ripples.push({ x: mouse.x, y: mouse.y, r: 0, maxR: 100, alpha: 1 });
+          koiFood.push({ x: mouse.x, y: mouse.y, life: 1000 });
           mouse.clicked = false;
           playTone(300, 'sine', 0.2);
         }
@@ -1063,14 +1301,53 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.stroke();
         }
 
+        // Draw and update food
+        for (let i = koiFood.length - 1; i >= 0; i--) {
+          let food = koiFood[i];
+          food.life--;
+          if (food.life <= 0) {
+            koiFood.splice(i, 1);
+            continue;
+          }
+          ctx.beginPath();
+          ctx.arc(food.x, food.y, 3, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(217, 119, 6, ${food.life / 1000})`;
+          ctx.fill();
+        }
+
         kois.forEach(koi => {
-          const dx = mouse.x - koi.x;
-          const dy = mouse.y - koi.y;
+          let targetX = mouse.x;
+          let targetY = mouse.y;
+          
+          // Find nearest food
+          let nearestFoodDist = Infinity;
+          let nearestFoodIdx = -1;
+          koiFood.forEach((food, idx) => {
+            const dx = food.x - koi.x;
+            const dy = food.y - koi.y;
+            const dist = dx * dx + dy * dy;
+            if (dist < nearestFoodDist) {
+              nearestFoodDist = dist;
+              nearestFoodIdx = idx;
+            }
+          });
+
+          if (nearestFoodIdx !== -1) {
+            targetX = koiFood[nearestFoodIdx].x;
+            targetY = koiFood[nearestFoodIdx].y;
+            if (nearestFoodDist < 400) { // Eat food
+              koiFood.splice(nearestFoodIdx, 1);
+              playTone(500, 'triangle', 0.1);
+            }
+          }
+
+          const dx = targetX - koi.x;
+          const dy = targetY - koi.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           
           if (dist > 0) {
-            koi.vx += (dx / dist) * 0.03;
-            koi.vy += (dy / dist) * 0.03;
+            koi.vx += (dx / dist) * 0.05;
+            koi.vy += (dy / dist) * 0.05;
           }
           
           koi.vx *= 0.98;
@@ -1129,6 +1406,15 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         const wind = (mouse.x - canvas.width / 2) / (canvas.width / 2) * 3;
         
         petals.forEach(p => {
+          const dx = mouse.x - p.x;
+          const dy = mouse.y - p.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 80) {
+            p.vx -= (dx / dist) * 0.5;
+            p.vy -= (dy / dist) * 0.5;
+          }
+
+          p.vx *= 0.98; // Dampen horizontal velocity
           p.x += p.vx + wind;
           p.y += p.vy;
           p.angle += p.spin;
@@ -1136,6 +1422,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           if (p.y > canvas.height + 20) {
             p.y = -20;
             p.x = Math.random() * canvas.width;
+            p.vx = (Math.random() - 0.5) * 2;
+            p.vy = 1 + Math.random() * 2;
           }
           if (p.x > canvas.width + 20) p.x = -20;
           if (p.x < -20) p.x = canvas.width + 20;
@@ -1315,102 +1603,317 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.fillText(`SCORE: ${tetrisScore}`, 20, 30);
         ctx.fillText('CLICK TO ROTATE', 20, 50);
 
+      } else if (gameType === 'daifugo') {
+        ctx.fillStyle = '#064e3b'; // Dark green table
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw AI Hand (hidden)
+        const cardW = 40;
+        const cardH = 60;
+        const spacing = 10;
+        const aiTotalW = daifugoAIHand.length * (cardW + spacing) - spacing;
+        const aiStartX = (canvas.width - aiTotalW) / 2;
+        const aiStartY = 20;
+
+        for (let i = 0; i < daifugoAIHand.length; i++) {
+          ctx.fillStyle = '#b91c1c'; // Red back
+          ctx.fillRect(aiStartX + i * (cardW + spacing), aiStartY, cardW, cardH);
+          ctx.strokeStyle = '#fca5a5';
+          ctx.strokeRect(aiStartX + i * (cardW + spacing), aiStartY, cardW, cardH);
+        }
+
+        // Draw Pile
+        if (daifugoPile.length > 0) {
+          const topCard = daifugoPile[daifugoPile.length - 1];
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(canvas.width / 2 - cardW / 2, canvas.height / 2 - cardH / 2, cardW, cardH);
+          ctx.strokeStyle = '#000000';
+          ctx.strokeRect(canvas.width / 2 - cardW / 2, canvas.height / 2 - cardH / 2, cardW, cardH);
+          ctx.fillStyle = '#000000';
+          ctx.font = '20px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(topCard.toString(), canvas.width / 2, canvas.height / 2);
+        } else {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+          ctx.strokeRect(canvas.width / 2 - cardW / 2, canvas.height / 2 - cardH / 2, cardW, cardH);
+        }
+
+        // Draw Player Hand
+        const pTotalW = daifugoPlayerHand.length * (cardW + spacing) - spacing;
+        const pStartX = (canvas.width - pTotalW) / 2;
+        const pStartY = canvas.height - cardH - 20;
+
+        for (let i = 0; i < daifugoPlayerHand.length; i++) {
+          const card = daifugoPlayerHand[i];
+          const cx = pStartX + i * (cardW + spacing);
+          const cy = pStartY;
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(cx, cy, cardW, cardH);
+          ctx.strokeStyle = '#000000';
+          ctx.strokeRect(cx, cy, cardW, cardH);
+          
+          ctx.fillStyle = '#000000';
+          ctx.font = '16px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(card.toString(), cx + cardW / 2, cy + cardH / 2);
+        }
+
+        // Draw Pass Button
+        if (daifugoTurn === 'player' && !daifugoGameOver) {
+          ctx.fillStyle = '#f59e0b';
+          ctx.fillRect(canvas.width / 2 - 40, canvas.height / 2 + 20, 80, 30);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '14px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('PASS', canvas.width / 2, canvas.height / 2 + 35);
+        }
+
+        // Draw Message
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(daifugoMessage, canvas.width / 2, canvas.height / 2 + 80);
+        
+        ctx.textAlign = 'left';
+        ctx.fillText(`Wins: ${daifugoWins} | Losses: ${daifugoLosses}`, 10, 30);
+
+      } else if (gameType === 'oichokabu') {
+        ctx.fillStyle = '#1e3a8a'; // Dark blue table
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const cardW = 40;
+        const cardH = 60;
+        const spacing = 10;
+
+        const drawHand = (hand: number[], startY: number, hidden: boolean = false) => {
+          const totalW = hand.length * (cardW + spacing) - spacing;
+          const startX = (canvas.width - totalW) / 2;
+          for (let i = 0; i < hand.length; i++) {
+            const cx = startX + i * (cardW + spacing);
+            if (hidden && i === 1 && oichoState !== 'gameOver') {
+              ctx.fillStyle = '#b91c1c';
+              ctx.fillRect(cx, startY, cardW, cardH);
+              ctx.strokeStyle = '#fca5a5';
+              ctx.strokeRect(cx, startY, cardW, cardH);
+            } else {
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(cx, startY, cardW, cardH);
+              ctx.strokeStyle = '#000000';
+              ctx.strokeRect(cx, startY, cardW, cardH);
+              ctx.fillStyle = '#000000';
+              ctx.font = '16px monospace';
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              ctx.fillText(hand[i].toString(), cx + cardW / 2, startY + cardH / 2);
+            }
+          }
+        };
+
+        // Draw Dealer Hand
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('DEALER', canvas.width / 2, 20);
+        drawHand(oichoDealerHand, 30, true);
+        if (oichoState === 'gameOver') {
+          ctx.fillText(`Score: ${getOichoScore(oichoDealerHand)}`, canvas.width / 2, 105);
+        }
+
+        // Draw Player Hand
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('PLAYER', canvas.width / 2, canvas.height - 110);
+        drawHand(oichoPlayerHand, canvas.height - 90);
+        ctx.fillText(`Score: ${getOichoScore(oichoPlayerHand)}`, canvas.width / 2, canvas.height - 15);
+        
+        ctx.textAlign = 'left';
+        ctx.fillText(`Chips: ${oichoChips}`, 10, canvas.height - 15);
+
+        // Draw Buttons
+        if (oichoState === 'playerTurn') {
+          ctx.fillStyle = '#10b981';
+          ctx.fillRect(canvas.width / 2 - 60, canvas.height / 2 + 20, 50, 30);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = '12px monospace';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('DRAW', canvas.width / 2 - 35, canvas.height / 2 + 35);
+
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(canvas.width / 2 + 10, canvas.height / 2 + 20, 50, 30);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillText('STAND', canvas.width / 2 + 35, canvas.height / 2 + 35);
+        }
+
+        // Draw Message
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(oichoMessage, canvas.width / 2, canvas.height / 2);
+
       } else if (gameType === 'hanafuda') {
-        ctx.fillStyle = '#1e293b';
+        // Draw elegant background
+        const grad = ctx.createRadialGradient(canvas.width/2, canvas.height/2, 0, canvas.width/2, canvas.height/2, canvas.width);
+        grad.addColorStop(0, '#1e293b');
+        grad.addColorStop(1, '#0f172a');
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         hanafudaCards.forEach(c => {
+          // Animate flip and scale
+          const targetFlip = (c.flipped || c.matched) ? 1 : 0;
+          c.flipAnim += (targetFlip - c.flipAnim) * 0.15;
+          c.scale += (1 - c.scale) * 0.1;
+
           ctx.save();
-          ctx.translate(c.x, c.y);
+          ctx.translate(c.x + c.w/2, c.y + c.h/2);
+          ctx.scale(Math.abs(Math.cos(c.flipAnim * Math.PI)), c.scale);
+          ctx.translate(-c.w/2, -c.h/2);
           
           if (c.matched) {
-            ctx.globalAlpha = 0.2;
+            ctx.globalAlpha = 0.3;
           }
 
-          // Card shadow
-          ctx.fillStyle = 'rgba(0,0,0,0.3)';
-          ctx.fillRect(4, 4, c.w, c.h);
+          // Card shadow with glow if selected
+          const isSelected = hanafudaSelected.includes(c.id);
+          ctx.shadowBlur = isSelected ? 20 : 10;
+          ctx.shadowColor = isSelected ? '#fbbf24' : 'rgba(0,0,0,0.5)';
+          
+          // Card Base
+          ctx.beginPath();
+          ctx.roundRect(0, 0, c.w, c.h, 8);
+          ctx.fillStyle = '#000';
+          ctx.fill();
+          ctx.shadowBlur = 0;
 
-          if (c.flipped || c.matched) {
-            ctx.fillStyle = '#ffffff';
-            ctx.fillRect(0, 0, c.w, c.h);
+          if (c.flipAnim > 0.5) {
+            // Front
+            ctx.fillStyle = '#fffaf0';
+            ctx.beginPath();
+            ctx.roundRect(2, 2, c.w - 4, c.h - 4, 6);
+            ctx.fill();
+            
+            // Decorative border
+            ctx.strokeStyle = c.color;
+            ctx.lineWidth = 2;
+            ctx.strokeRect(6, 6, c.w - 12, c.h - 12);
             
             // Month symbol
             ctx.fillStyle = c.color;
-            ctx.font = '30px serif';
+            ctx.font = '36px serif';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(c.symbol, c.w / 2, c.h / 2 - 10);
             
-            ctx.font = '12px serif';
-            ctx.fillStyle = '#333';
+            ctx.font = 'bold 10px serif';
+            ctx.fillStyle = '#1a1a1a';
             ctx.fillText(c.jp, c.w / 2, c.h / 2 + 25);
-
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, c.w, c.h);
           } else {
-            ctx.fillStyle = '#991b1b'; // Traditional red back
-            ctx.fillRect(0, 0, c.w, c.h);
+            // Back
+            ctx.fillStyle = '#991b1b'; 
+            ctx.beginPath();
+            ctx.roundRect(2, 2, c.w - 4, c.h - 4, 6);
+            ctx.fill();
             
             // Back pattern
             ctx.strokeStyle = '#fbbf24';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(5, 5, c.w - 10, c.h - 10);
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(8, 8, c.w - 16, c.h - 16);
+            
             ctx.beginPath();
-            ctx.moveTo(c.w / 2, 15);
-            ctx.lineTo(c.w / 2, c.h - 15);
-            ctx.moveTo(15, c.h / 2);
-            ctx.lineTo(c.w - 15, c.h / 2);
+            ctx.arc(c.w/2, c.h/2, 10, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(c.w/2, 15); ctx.lineTo(c.w/2, c.h-15);
+            ctx.moveTo(15, c.h/2); ctx.lineTo(c.w-15, c.h/2);
             ctx.stroke();
           }
           ctx.restore();
         });
 
+        // UI Overlay
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(`SCORE: ${hanafudaScore}`, 20, 35);
+        ctx.textAlign = 'right';
+        ctx.fillText(`MOVES: ${hanafudaMoves}`, canvas.width - 20, 35);
+
         if (hanafudaCards.every(c => c.matched)) {
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 24px serif';
+          ctx.fillStyle = 'rgba(0,0,0,0.8)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = 'bold 48px serif';
           ctx.textAlign = 'center';
-          ctx.fillText('ZEN MATCH!', canvas.width / 2, canvas.height - 40);
-          setTimeout(initHanafuda, 2000);
+          ctx.fillText('ZEN MASTER', canvas.width / 2, canvas.height / 2);
+          ctx.font = '18px sans-serif';
+          ctx.fillStyle = '#fff';
+          ctx.fillText('Perfect Harmony Achieved', canvas.width / 2, canvas.height / 2 + 40);
+          setTimeout(initHanafuda, 3000);
         }
 
       } else if (gameType === 'karuta') {
-        ctx.fillStyle = '#064e3b';
+        const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, '#064e3b');
+        grad.addColorStop(1, '#022c22');
+        ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Reading area - moved down to avoid nav bar
-        ctx.fillStyle = 'rgba(255,255,255,0.1)';
-        ctx.fillRect(20, 50, canvas.width - 40, 80);
+        // Reading area with glowing effect
+        const pulse = Math.sin(Date.now() / 300) * 0.2 + 0.8;
+        ctx.fillStyle = `rgba(255,255,255,${0.1 * pulse})`;
+        ctx.beginPath();
+        ctx.roundRect(20, 50, canvas.width - 40, 100, 15);
+        ctx.fill();
         
+        ctx.shadowBlur = 15 * pulse;
+        ctx.shadowColor = '#fbbf24';
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 40px serif';
+        ctx.font = 'bold 50px serif';
         ctx.textAlign = 'center';
-        ctx.fillText(karutaReadingCard?.read || "", canvas.width / 2, 95);
+        ctx.fillText(karutaReadingCard?.read || "", canvas.width / 2, 110);
+        ctx.shadowBlur = 0;
         
-        ctx.font = '10px sans-serif';
-        ctx.globalAlpha = 0.6;
-        ctx.fillText('LISTEN TO THE READING...', canvas.width / 2, 115);
-        ctx.globalAlpha = 1;
+        ctx.font = 'bold 10px sans-serif';
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText('FIND THE MATCHING SYMBOL', canvas.width / 2, 135);
 
         karutaCards.forEach(c => {
           if (c.found) return;
           
-          // Card shadow
-          ctx.fillStyle = 'rgba(0,0,0,0.2)';
-          ctx.fillRect(c.x + 2, c.y + 2, c.w, c.h);
+          ctx.save();
+          ctx.translate(c.x + c.w/2, c.y + c.h/2);
+          const hover = (mouse.x > c.x && mouse.x < c.x + c.w && mouse.y > c.y && mouse.y < c.y + c.h);
+          if (hover) ctx.scale(1.05, 1.05);
+          ctx.translate(-c.w/2, -c.h/2);
 
+          // Card shadow
+          ctx.fillStyle = 'rgba(0,0,0,0.4)';
+          ctx.beginPath();
+          ctx.roundRect(4, 4, c.w, c.h, 4);
+          ctx.fill();
+
+          // Card Base
           ctx.fillStyle = '#fef3c7';
-          ctx.fillRect(c.x, c.y, c.w, c.h);
+          ctx.beginPath();
+          ctx.roundRect(0, 0, c.w, c.h, 4);
+          ctx.fill();
+          
           ctx.strokeStyle = '#92400e';
           ctx.lineWidth = 2;
-          ctx.strokeRect(c.x, c.y, c.w, c.h);
+          ctx.stroke();
           
-          ctx.fillStyle = '#000000';
-          ctx.font = '28px serif';
+          ctx.fillStyle = '#1a1a1a';
+          ctx.font = 'bold 32px serif';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(c.text, c.x + c.w / 2, c.y + c.h / 2);
+          ctx.fillText(c.text, c.w / 2, c.h / 2);
+          ctx.restore();
         });
 
       } else if (gameType === 'menko') {
@@ -1433,21 +1936,26 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         }
         
         ctx.rotate(menkoTargetCard.angle);
-        ctx.fillStyle = menkoTargetCard.flipped ? '#d1d5db' : '#b91c1c';
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(-menkoTargetCard.w / 2, -menkoTargetCard.h / 2, menkoTargetCard.w, menkoTargetCard.h);
+        
+        // Card Base
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = 'rgba(0,0,0,0.6)';
+        ctx.fillStyle = menkoTargetCard.flipped ? '#f3f4f6' : '#1e40af';
+        ctx.beginPath();
+        ctx.roundRect(-menkoTargetCard.w / 2, -menkoTargetCard.h / 2, menkoTargetCard.w, menkoTargetCard.h, 4);
+        ctx.fill();
         ctx.shadowBlur = 0;
         
         ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(-menkoTargetCard.w / 2, -menkoTargetCard.h / 2, menkoTargetCard.w, menkoTargetCard.h);
+        ctx.lineWidth = 3;
+        ctx.stroke();
         
         // Target art
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.beginPath();
-        ctx.arc(0, 0, 20, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = menkoTargetCard.flipped ? '#111827' : '#fff';
+        ctx.font = 'bold 12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(menkoTargetCard.flipped ? 'FLIPPED' : 'TARGET', 0, 0);
         
         ctx.restore();
 
@@ -1461,10 +1969,16 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.save();
           ctx.translate(menkoPlayerCard.x, menkoPlayerCard.y);
           ctx.rotate(menkoPlayerCard.rotation);
-          ctx.fillStyle = '#1e40af';
-          ctx.shadowBlur = 15;
-          ctx.shadowColor = 'rgba(30, 64, 175, 0.5)';
-          ctx.fillRect(-menkoPlayerCard.w / 2, -menkoPlayerCard.h / 2, menkoPlayerCard.w, menkoPlayerCard.h);
+          
+          ctx.shadowBlur = 20;
+          ctx.shadowColor = 'rgba(220, 38, 38, 0.5)';
+          ctx.fillStyle = '#dc2626';
+          ctx.beginPath();
+          ctx.roundRect(-menkoPlayerCard.w / 2, -menkoPlayerCard.h / 2, menkoPlayerCard.w, menkoPlayerCard.h, 4);
+          ctx.fill();
+          ctx.strokeStyle = '#fff';
+          ctx.lineWidth = 3;
+          ctx.stroke();
           ctx.restore();
 
           // Collision / Wind effect
@@ -1475,7 +1989,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           if (dist < 60 && !menkoTargetCard.flipped && menkoPlayerCard.vy > 0) {
             menkoTargetCard.flipped = true;
             menkoTargetCard.flipProgress = 0;
-            shake(25);
+            menkoScore += 10;
+            shake(30);
             spawnParticles(menkoTargetCard.x + menkoTargetCard.w / 2, menkoTargetCard.y + menkoTargetCard.h / 2, '#ffffff', 30);
             playTone(200, 'square', 0.2);
           }
@@ -1493,7 +2008,10 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 14px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(menkoTargetCard.flipped ? 'IPPON! (一本!)' : 'SLAM THE GROUND NEAR THE CARD!', canvas.width / 2, canvas.height - 30);
+        ctx.fillText(menkoTargetCard.flipped ? 'IPPON! (一本!) 🔥' : 'SLAM THE GROUND! 💥', canvas.width / 2, canvas.height - 30);
+        
+        ctx.textAlign = 'left';
+        ctx.fillText(`Score: ${menkoScore}`, 10, 30);
 
       } else if (gameType === 'lanterns') {
         // Deep night sky gradient
@@ -1523,12 +2041,23 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         }
 
         lanterns.forEach((l, i) => {
+          const dx = mouse.x - l.x;
+          const dy = mouse.y - l.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            l.vx -= (dx / dist) * 0.1;
+            l.vy -= (dy / dist) * 0.1;
+          }
+
+          l.vx *= 0.99; // Dampen horizontal velocity
           l.x += l.vx + (Math.sin(Date.now() * 0.001 + l.flicker) * 0.5);
           l.y += l.vy;
           
           if (l.y < -50) {
             lanterns[i].y = canvas.height + 50;
             lanterns[i].x = Math.random() * canvas.width;
+            lanterns[i].vx = (Math.random() - 0.5) * 0.5;
+            lanterns[i].vy = -0.5 - Math.random() * 1;
           }
 
           ctx.save();
@@ -1577,12 +2106,18 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         });
 
       } else if (gameType === 'bonsai') {
-        // Draw branches
+        bonsaiTime += 0.02;
+        
+        // Draw branches with gentle sway
         branches.forEach(b => {
+          // Sway logic based on generation (thinner branches sway more)
+          const sway = Math.sin(bonsaiTime + b.generation) * (b.generation * 0.02);
+          b.currentAngle += (b.targetAngle + sway - b.currentAngle) * 0.1;
+
           ctx.beginPath();
           ctx.moveTo(b.x, b.y);
-          const endX = b.x + Math.cos(b.angle) * b.length;
-          const endY = b.y + Math.sin(b.angle) * b.length;
+          const endX = b.x + Math.cos(b.currentAngle) * b.length;
+          const endY = b.y + Math.sin(b.currentAngle) * b.length;
           ctx.lineTo(endX, endY);
           ctx.strokeStyle = '#4a3b32';
           ctx.lineWidth = b.width;
@@ -1591,27 +2126,41 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         });
 
         // Draw leaves
-        leaves.forEach(l => {
-          if (l.alpha < 1) l.alpha += 0.05;
+        for (let i = leaves.length - 1; i >= 0; i--) {
+          const l = leaves[i];
+          if (l.alpha < 1 && !l.falling) l.alpha += 0.05;
+          
+          if (l.falling) {
+            l.x += l.vx;
+            l.y += l.vy;
+            l.rotation += l.vx * 0.1;
+            l.alpha -= 0.005;
+            if (l.alpha <= 0 || l.y > canvas.height + 20) {
+              leaves.splice(i, 1);
+              continue;
+            }
+          } else {
+            // Gentle sway for attached leaves
+            l.x += Math.sin(bonsaiTime * 2 + l.y) * 0.2;
+          }
+
+          ctx.save();
+          ctx.translate(l.x, l.y);
+          ctx.rotate(l.rotation);
           ctx.beginPath();
-          ctx.arc(l.x, l.y, l.size, 0, Math.PI * 2);
+          ctx.ellipse(0, 0, l.size, l.size * 0.6, 0, 0, Math.PI * 2);
           ctx.fillStyle = l.color;
           ctx.globalAlpha = l.alpha;
           ctx.fill();
-          ctx.globalAlpha = 1;
-        });
+          ctx.restore();
+        }
 
         if (mouse.clicked) {
           initBonsai();
           mouse.clicked = false;
-          shake(5);
-          playTone(200, 'sine', 0.5);
         }
         
-        ctx.fillStyle = '#1a1a1a';
-        ctx.font = '12px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('Click to regrow', canvas.width / 2, canvas.height - 20);
+        // Instructions handled by React UI
       } else if (gameType === 'infringement') {
         ctx.fillStyle = '#fef2f2';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
