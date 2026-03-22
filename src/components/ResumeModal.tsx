@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Printer, Mail, Phone, MapPin, Download, ExternalLink } from 'lucide-react';
 import { playUISound } from '../utils/sound';
@@ -27,7 +28,7 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
     }, 100);
   };
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 resume-modal-wrapper">
@@ -49,8 +50,8 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
               }`}
             >
               {/* Blueprint Background Overlay */}
-              <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none" />
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600" />
+              <div className="absolute inset-0 bg-grid-pattern opacity-[0.03] pointer-events-none no-print" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 no-print" />
               
             {/* Header / Toolbar */}
             <div className={`flex items-center justify-between px-6 py-4 border-b no-print relative z-10 ${
@@ -91,7 +92,7 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
               <div className="max-w-3xl mx-auto">
                 {/* Personal Info */}
                 <header className="mb-12 text-center md:text-left relative">
-                  <div className="absolute -left-8 top-0 bottom-0 w-px bg-blue-600/20 hidden md:block" />
+                  <div className="absolute -left-8 top-0 bottom-0 w-px bg-blue-600/20 hidden md:block print:hidden" />
                   <h1 className="text-5xl font-serif font-bold mb-4 tracking-tight">Nathan Gruen</h1>
                   <div className="flex flex-wrap justify-center md:justify-start gap-y-2 gap-x-6 text-sm text-neutral-500 font-medium">
                     <span className="flex items-center gap-1.5"><MapPin size={14} className="text-blue-600" /> 3323 Avenue K, Brooklyn, NY 11210</span>
@@ -281,4 +282,6 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }:
       )}
     </AnimatePresence>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 }

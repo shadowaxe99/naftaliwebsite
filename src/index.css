@@ -153,24 +153,20 @@ h1, h2, h3, h4, h5, h6 {
   }
   
   /* Hide everything by default */
-  body > * {
+  body.printing > * {
     display: none !important;
   }
   
   /* Show only the printing container */
-  body.printing #root {
-    display: block !important;
-  }
-  
-  body.printing #root > *:not(.resume-modal-wrapper) {
-    display: none !important;
-  }
-  
   body.printing .resume-modal-wrapper {
     position: static !important;
     display: block !important;
     height: auto !important;
     overflow: visible !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    padding: 0 !important;
+    margin: 0 !important;
   }
   
   body.printing .resume-modal-backdrop, 
@@ -180,6 +176,7 @@ h1, h2, h3, h4, h5, h6 {
   
   body.printing #resume-print-container {
     position: static !important;
+    display: block !important;
     width: 100% !important;
     max-width: none !important;
     margin: 0 !important;
@@ -189,6 +186,7 @@ h1, h2, h3, h4, h5, h6 {
     color: black !important;
     overflow: visible !important;
     height: auto !important;
+    max-height: none !important;
     transform: none !important;
   }
   
