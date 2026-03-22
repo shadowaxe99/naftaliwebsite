@@ -1,4 +1,4 @@
-import React, { useState, Suspense, lazy } from 'react';
+import React, { useState, Suspense, lazy, useEffect } from 'react';
 import LockScreen from './components/LockScreen';
 
 // Lazy load the portfolio content to ensure it's not in the main bundle
@@ -6,14 +6,23 @@ const Portfolio = lazy(() => import('./components/Portfolio'));
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [globalMute, setGlobalMute] = useState(false);
+  const [cursorType, setCursorType] = useState<'anime' | 'mecha' | 'default'>('anime');
 
   const toggleTheme = () => {
     setIsDarkMode(!isDarkMode);
   };
 
+  useEffect(() => {
+    // Remove all cursor classes
+    document.body.classList.remove('cursor-anime', 'cursor-mecha', 'cursor-default');
+    // Add the current cursor class
+    document.body.classList.add(`cursor-${cursorType}`);
+  }, [cursorType]);
+
   if (!isAuthenticated) {
-    return <LockScreen onAuthenticate={() => setIsAuthenticated(true)} />;
+    return <LockScreen onAuthenticate={() => setIsAuthenticated(true)} isDarkMode={isDarkMode} toggleTheme={toggleTheme} />;
   }
 
   return (
@@ -24,7 +33,14 @@ export default function App() {
         </div>
       </div>
     }>
-      <Portfolio isDarkMode={isDarkMode} toggleTheme={toggleTheme} />
+      <Portfolio 
+        isDarkMode={isDarkMode} 
+        toggleTheme={toggleTheme} 
+        globalMute={globalMute}
+        setGlobalMute={setGlobalMute}
+        cursorType={cursorType}
+        setCursorType={setCursorType}
+      />
     </Suspense>
   );
 }

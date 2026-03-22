@@ -15,6 +15,25 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Custom Cursors */
+body.cursor-anime, body.cursor-anime * {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="%23ef4444" stroke="%23ffffff" stroke-width="1.5"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>') 3 3, auto;
+}
+body.cursor-anime a, body.cursor-anime button, body.cursor-anime [role="button"], body.cursor-anime input, body.cursor-anime select, body.cursor-anime textarea {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="%23ef4444" stroke="%23ffffff" stroke-width="1.5"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/></svg>') 3 3, pointer;
+}
+
+body.cursor-mecha, body.cursor-mecha * {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%2306b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg>') 12 12, crosshair;
+}
+body.cursor-mecha a, body.cursor-mecha button, body.cursor-mecha [role="button"], body.cursor-mecha input, body.cursor-mecha select, body.cursor-mecha textarea {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%2306b6d4" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2v4m0 12v4m-10-10h4m12 0h4"/></svg>') 12 12, pointer;
+}
+
+body.cursor-default {
+  cursor: auto;
+}
+
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-serif);
 }
@@ -27,6 +46,17 @@ h1, h2, h3, h4, h5, h6 {
   background-size: 32px 32px;
   mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+}
+
+/* Blueprint Background */
+.bg-blueprint {
+  background-color: #0047AB;
+  background-image: 
+    linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px),
+    linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
 }
 
 /* Glassmorphism Utilities */
@@ -117,26 +147,59 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media print {
-  body * {
-    visibility: hidden;
-  }
-  .print-section, .print-section * {
-    visibility: visible;
-  }
-  .print-section {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: visible !important;
-    max-height: none !important;
-    box-shadow: none !important;
+  body {
     background: white !important;
     color: black !important;
   }
-  .no-print {
+  
+  /* Hide everything by default */
+  body > * {
     display: none !important;
+  }
+  
+  /* Show only the printing container */
+  body.printing #root {
+    display: block !important;
+  }
+  
+  body.printing #root > *:not(.resume-modal-wrapper) {
+    display: none !important;
+  }
+  
+  body.printing .resume-modal-wrapper {
+    position: static !important;
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  
+  body.printing .resume-modal-backdrop, 
+  body.printing .no-print {
+    display: none !important;
+  }
+  
+  body.printing #resume-print-container {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: white !important;
+    color: black !important;
+    overflow: visible !important;
+    height: auto !important;
+    transform: none !important;
+  }
+  
+  body.printing .resume-content {
+    overflow: visible !important;
+    padding: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+  }
+  
+  @page {
+    margin: 0.5in;
   }
 }

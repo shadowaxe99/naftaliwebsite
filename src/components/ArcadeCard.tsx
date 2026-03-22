@@ -31,6 +31,12 @@ export default function ArcadeCard() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isVisible && isPlaying) {
+      setIsPlaying(false);
+    }
+  }, [isVisible, isPlaying]);
+
   const [isInfoHovered, setIsInfoHovered] = useState(false);
 
   const cardGames: { type: GameType, label: string, jp: string, info: string }[] = [
@@ -50,7 +56,7 @@ export default function ArcadeCard() {
       type: 'menko', 
       label: 'Menko', 
       jp: 'めんこ',
-      info: 'Click to throw your card. Try to flip the target card with the wind of your throw!'
+      info: 'Hold to charge power, release to slam! Use the wind of your throw to flip multiple target cards. Watch the wind indicator!'
     },
     {
       type: 'daifugo',
@@ -67,6 +73,13 @@ export default function ArcadeCard() {
   ];
 
   const [showInfo, setShowInfo] = useState<string | null>(null);
+
+  const toggleInfo = (type: string | null) => {
+    setShowInfo(type);
+    if (type) {
+      containerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  };
 
   const getNavBtnClass = (type: GameType | 'card') => {
     const isActive = type === 'card' 
@@ -150,7 +163,7 @@ export default function ArcadeCard() {
                                 {game.label} <span className="opacity-40 ml-1">{game.jp}</span>
                               </button>
                               <button 
-                                onClick={() => setShowInfo(game.type)}
+                                onClick={() => toggleInfo(game.type)}
                                 className="p-2 text-white/40 hover:text-white transition-colors"
                               >
                                 <Info size={14} />
@@ -225,7 +238,7 @@ export default function ArcadeCard() {
             <canvas 
               ref={canvasRef} 
               onContextMenu={(e) => e.preventDefault()}
-              className="absolute inset-0 z-10 touch-none"
+              className={`absolute inset-0 z-10 touch-none ${gameType === 'infringement' ? 'cursor-crosshair' : 'cursor-default'}`}
             />
             
             {gameType === 'zen' && (
@@ -233,7 +246,7 @@ export default function ArcadeCard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2"
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2 pointer-events-none"
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Zen Mode: Move and press mouse to interact with the field
@@ -245,7 +258,7 @@ export default function ArcadeCard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2"
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2 pointer-events-none"
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Koi Mode: Move and press mouse to interact with the field
@@ -257,7 +270,7 @@ export default function ArcadeCard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2"
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2 pointer-events-none"
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Sakura Mode: Move and press mouse to interact with the field
@@ -269,7 +282,7 @@ export default function ArcadeCard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2"
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2 pointer-events-none"
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Lanterns Mode: Move and press mouse to interact with the field
@@ -281,10 +294,46 @@ export default function ArcadeCard() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
-                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2"
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2 pointer-events-none"
               >
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 Bonsai Mode: Click anywhere to regrow
+              </motion.div>
+            )}
+
+            {gameType === 'menko' && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2 pointer-events-none"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                Menko: Drag to aim, hold to charge, release to slam!
+              </motion.div>
+            )}
+
+            {gameType === 'infringement' && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/90 backdrop-blur-md border border-red-500/50 px-4 py-2 rounded-full text-[10px] font-mono text-white font-bold uppercase tracking-widest flex items-center gap-2 pointer-events-none shadow-[0_0_20px_rgba(0,0,0,0.8)]"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                Takedown: Click infringing marks (©, ™, ®) before the ring closes
+              </motion.div>
+            )}
+
+            {gameType === 'tetris' && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 bg-black/40 backdrop-blur-md border border-white/10 px-4 py-2 rounded-full text-[10px] font-mono text-white/60 uppercase tracking-widest flex items-center gap-2 pointer-events-none"
+              >
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                Stacker: Move mouse to position, click to rotate
               </motion.div>
             )}
             
@@ -299,7 +348,7 @@ export default function ArcadeCard() {
                     {cardGames.find(g => g.type === showInfo)?.info}
                   </p>
                   <button 
-                    onClick={() => setShowInfo(null)}
+                    onClick={() => toggleInfo(null)}
                     className="w-full py-2 bg-white text-black rounded-xl font-bold text-xs uppercase tracking-widest"
                   >
                     Got it
@@ -308,35 +357,7 @@ export default function ArcadeCard() {
               </div>
             )}
 
-            {/* Centered Modal for How to Play */}
-            <AnimatePresence>
-              {gameType === 'infringement' && isInfoHovered && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
-                >
-                  <div className="w-full max-w-sm bg-white/95 backdrop-blur-md border border-red-100 rounded-2xl p-6 shadow-2xl">
-                    <h4 className="text-[12px] font-black uppercase tracking-[0.2em] text-red-600 mb-3">Takedown Protocol</h4>
-                    <p className="text-[13px] text-red-900 leading-relaxed font-medium">
-                      Click infringing marks <span className="font-bold">(©, ™, ®)</span> before the timer ring closes. 
-                      <br /><br />
-                      <span className="opacity-70 italic">"Protect the brand at all costs. Every miss is a liability."</span>
-                    </p>
-                    <div className="mt-4 pt-4 border-t border-red-100 flex justify-between items-center">
-                      <span className="text-[10px] font-mono text-red-400 uppercase">Status: Active</span>
-                      <button 
-                        onClick={() => setIsInfoHovered(false)}
-                        className="text-[11px] font-bold text-white bg-red-600 hover:bg-red-700 px-4 py-1.5 rounded-full transition-colors"
-                      >
-                        Dismiss
-                      </button>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+
           </div>
         </>
       ) : (

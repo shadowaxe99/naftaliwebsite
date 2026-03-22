@@ -10,13 +10,13 @@ const blocks = [
     year: '2021-2024',
     location: 'Albany, NY',
     description: 'Recipient of the U.S. Presidential Academic Excellence Award. Focused on liberal arts with a strong emphasis on textual analysis and critical thinking.',
-    color: 'bg-neutral-800',
+    color: 'bg-neutral-500',
     textColor: 'text-white',
-    width: 'w-full md:w-[60%]',
+    width: 'w-full md:w-[65%]',
     height: 'min-h-[120px]',
     align: 'self-center',
     icon: '🏛️',
-    stamp: 'APPROVED'
+    stamp: 'FOUNDATION'
   },
   {
     id: 'creative',
@@ -24,15 +24,15 @@ const blocks = [
     subtitle: 'American Dream Mall',
     year: '2021',
     location: 'East Rutherford, NJ',
-    description: 'Consulted with VP of Theme Park Development on creative strategy for successfully constructed PAW Patrol attraction. Drafted comprehensive script for Avatar: The Last Airbender motion simulator ride reviewed by park leadership.',
-    color: 'bg-neutral-200',
-    textColor: 'text-neutral-900',
-    width: 'w-[80%] md:w-[40%]',
+    description: 'Consulted with VP of Theme Park Development on creative strategy for successfully constructed PAW Park attraction. Drafted comprehensive script for Avatar: The Last Airbender motion simulator ride reviewed by park leadership.',
+    color: 'bg-red-600',
+    textColor: 'text-white',
+    width: 'w-[80%] md:w-[45%]',
     height: 'min-h-[110px]',
-    align: 'self-start md:ml-[10%]',
+    align: 'self-start md:ml-[5%]',
     icon: '🎢',
-    annotation: 'IMAGINATION',
-    stamp: 'CREATIVE'
+    annotation: 'CREATIVE_BRICK',
+    stamp: 'STRATEGY'
   },
   {
     id: 'analysis',
@@ -41,13 +41,13 @@ const blocks = [
     year: '2022-2024',
     location: 'Lakewood, NJ',
     description: 'Intensive graduate-level study of Jewish law involving rigorous textual analysis and application of complex legal frameworks. Specialized in intricate reasoning, such as the laws of mixtures (Ta’aruvos) and procedural prohibitions (Shabbos).',
-    color: 'bg-neutral-300',
+    color: 'bg-yellow-400',
     textColor: 'text-neutral-900',
-    width: 'w-[90%] md:w-[50%]',
+    width: 'w-[90%] md:w-[55%]',
     height: 'min-h-[110px]',
-    align: 'self-end md:mr-[15%] -mt-4',
+    align: 'self-end md:mr-[10%] -mt-4',
     icon: '📜',
-    annotation: 'DEEP DIVE',
+    annotation: 'ANALYTICAL_BRICK',
     stamp: 'CERTIFIED'
   },
   {
@@ -59,12 +59,12 @@ const blocks = [
     description: 'Collaborated with senior design staff to produce digital and print advertising materials using Adobe Creative Suite. Gained proficiency in AI technologies by training Stable Diffusion models for creative asset generation.',
     color: 'bg-neutral-900',
     textColor: 'text-white',
-    width: 'w-[85%] md:w-[45%]',
+    width: 'w-[85%] md:w-[50%]',
     height: 'min-h-[120px]',
     align: 'self-center md:ml-[5%] -mt-6',
     icon: '🤖',
-    annotation: 'FUTURE-PROOF',
-    stamp: 'BETA'
+    annotation: 'DIGITAL_BRICK',
+    stamp: 'BETA_TEST'
   },
   {
     id: 'law',
@@ -73,14 +73,14 @@ const blocks = [
     year: '2026 - 2029',
     location: 'New York, NY',
     description: 'Juris Doctor (J.D.) Candidate. Building upon a foundation of rigorous analysis to specialize in Copyright & Trademark Law with a focus on Japanese Intellectual Property.',
-    color: 'bg-emerald-600',
+    color: 'bg-blue-600',
     textColor: 'text-white',
-    width: 'w-full md:w-[55%]',
+    width: 'w-full md:w-[60%]',
     height: 'min-h-[140px]',
     align: 'self-center -mt-8',
     icon: '⚖️',
-    annotation: 'FINAL FORM',
-    stamp: 'IN PROGRESS'
+    annotation: 'LEGAL_BRICK',
+    stamp: 'IN_PROGRESS'
   }
 ];
 
@@ -141,34 +141,56 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
         <motion.div 
           animate={{ rotate: 360 }}
           transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-          className="absolute top-10 left-10 text-blue-500/20"
+          className="absolute top-10 left-10 text-blue-500/10"
         >
           <Ruler size={120} />
         </motion.div>
         <motion.div 
           animate={{ y: [0, -20, 0] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="absolute bottom-20 right-10 text-blue-500/20"
+          className="absolute bottom-20 right-10 text-blue-500/10"
         >
           <Hammer size={100} />
         </motion.div>
+
+        {/* Technical Annotations */}
+        <div className="absolute top-1/2 left-4 -translate-y-1/2 text-[8px] font-mono text-blue-500/20 vertical-text uppercase tracking-widest hidden lg:block">
+          Drafting_Sheet_01 // Project_Evolution // Scale_1:1
+        </div>
+        <div className="absolute top-1/2 right-4 -translate-y-1/2 text-[8px] font-mono text-blue-500/20 vertical-text uppercase tracking-widest hidden lg:block">
+          Rev_2026_03_22 // Auth_Nathan_Gruen // Status_Active
+        </div>
       </div>
 
-      <div className="text-center mb-12 relative z-10">
+      <div className="text-center mb-16 relative z-10">
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-bold uppercase tracking-[0.2em] mb-4"
         >
-          <PenTool size={12} /> Architecting the Future
+          <Construction size={12} /> System Assembly in Progress
         </motion.div>
-        <div className="text-neutral-300 font-bold text-4xl mb-2 opacity-30">経歴</div>
+        <div 
+          className="text-neutral-300 font-bold text-5xl mb-2 opacity-20 select-none"
+          style={{ fontFamily: '"Noto Serif JP", serif' }}
+        >
+          経歴
+        </div>
         <h3 className={`text-4xl md:text-5xl font-serif font-medium mb-4 ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Career Architecture</h3>
-        <p className="text-neutral-500 text-sm uppercase tracking-widest font-semibold flex items-center justify-center gap-2">
-          <Sparkles size={14} className="text-yellow-500" /> 
-          Building the Foundation 
-          <Sparkles size={14} className="text-yellow-500" />
-        </p>
+        <div className="flex items-center justify-center gap-8 text-[10px] font-mono text-neutral-500 uppercase tracking-[0.3em]">
+          <div className="flex items-center gap-2">
+            <span className="w-1 h-1 rounded-full bg-blue-500" />
+            Scale: 1:1
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-1 h-1 rounded-full bg-blue-500" />
+            Rev: 2026.03
+          </div>
+          <div className="flex items-center gap-2 text-blue-500/60">
+            <span className="w-1 h-1 rounded-full bg-blue-500 animate-pulse" />
+            Live Build
+          </div>
+        </div>
       </div>
       
       <div className="relative w-full flex flex-col-reverse gap-4 px-4 md:px-12">
@@ -217,7 +239,7 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
                 }}
                 className={`
                   w-full ${blockColor} ${blockTextColor}
-                  rounded-2xl shadow-2xl border border-white/10 relative overflow-hidden
+                  rounded-2xl shadow-[0_10px_0_rgb(0,0,0,0.2),0_20px_40px_rgba(0,0,0,0.3)] border border-white/20 relative overflow-visible
                   flex flex-col justify-center cursor-pointer
                   p-6 md:p-10 group
                 `}
@@ -226,19 +248,28 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
                   playClick();
                 }}
               >
+                {/* LEGO Studs Detail */}
+                <div className="absolute top-0 left-0 w-full flex justify-around px-12 -mt-4 z-20">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className={`w-10 h-6 rounded-t-xl ${blockColor} border-t border-x border-black/10 shadow-[inset_0_2px_4px_rgba(255,255,255,0.3),inset_0_-2px_4px_rgba(0,0,0,0.3)] relative`}>
+                      <div className={`absolute inset-0 flex items-center justify-center opacity-20 text-[6px] font-black tracking-tighter ${blockTextColor}`}>STUD</div>
+                    </div>
+                  ))}
+                </div>
+
                 {/* Hover Blueprint Tooltip - Refined to look like a professional callout */}
-                <div className="absolute top-6 left-6 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-20 transform -translate-x-4 group-hover:translate-x-0">
+                <div className="absolute top-10 left-6 opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none z-30 transform -translate-x-4 group-hover:translate-x-0">
                   <div className="flex items-center">
                     <div className={`px-2 py-1 rounded-sm border shadow-xl flex items-center gap-2 ${
                       isDarkMode 
-                        ? 'bg-blue-600/40 border-blue-400/50 text-blue-100' 
+                        ? 'bg-blue-600/60 border-blue-400/50 text-blue-100' 
                         : 'bg-blue-600 border-blue-700 text-white'
                     }`}>
                       <Ruler size={10} className="animate-pulse" />
                       <div className="flex flex-col leading-none">
-                        <span className="text-[7px] font-mono font-black uppercase tracking-tighter opacity-70">Architectural Spec</span>
+                        <span className="text-[7px] font-mono font-black uppercase tracking-tighter opacity-70">Brick Spec</span>
                         <span className="text-[9px] font-mono font-bold whitespace-nowrap">
-                          DIM: {1200 + (index * 240)}mm x {600 + (index * 120)}mm
+                          TYPE: {index === 0 ? 'BASEPLATE' : 'BRICK_2x4'}
                         </span>
                       </div>
                     </div>
@@ -246,32 +277,28 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
                     <div className={`w-6 h-px ${isDarkMode ? 'bg-blue-400/40' : 'bg-blue-600/60'}`} />
                   </div>
                 </div>
-                {/* LEGO Studs Detail */}
-                <div className="absolute top-0 left-0 w-full flex justify-around px-12 -mt-3 opacity-30 group-hover:opacity-60 transition-opacity">
-                  {[...Array(6)].map((_, i) => (
-                    <div key={i} className="w-10 h-6 rounded-t-xl bg-current shadow-inner" />
-                  ))}
-                </div>
 
-                {/* Whimsical Stamp - Moved to background and lowered opacity */}
-                <div className={`absolute top-1/2 right-12 -translate-y-1/2 opacity-[0.03] -rotate-12 pointer-events-none select-none transition-opacity group-hover:opacity-[0.07] z-0`}>
-                  <div className="border-4 border-current px-4 py-2 rounded-lg text-6xl font-black uppercase tracking-tighter">
-                    {block.stamp}
+                {/* LEGO Brand Stamp - Contained perfectly within the block's borders */}
+                <div className="absolute inset-0 overflow-hidden rounded-2xl pointer-events-none z-0">
+                  <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.07] -rotate-12 select-none transition-opacity group-hover:opacity-[0.12] flex justify-center`}>
+                    <div className="border-[8px] md:border-[12px] border-current px-6 py-3 md:px-8 md:py-4 rounded-[2rem] text-5xl md:text-6xl font-black uppercase tracking-tighter whitespace-nowrap">
+                      {block.stamp}
+                    </div>
                   </div>
                 </div>
                 
                 <div className="flex items-start justify-between relative z-10">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <p className="text-xs font-mono font-bold opacity-60 bg-current/10 px-2 py-0.5 rounded">{block.year}</p>
+                      <p className="text-xs font-mono font-bold opacity-60 bg-black/20 px-2 py-0.5 rounded">{block.year}</p>
                       {block.location && (
                         <span className="flex items-center gap-1 text-[10px] opacity-40 uppercase tracking-widest font-bold">
                           <MapPin size={10} /> {block.location}
                         </span>
                       )}
                     </div>
-                    <h4 className="text-xl md:text-3xl font-serif font-medium tracking-tight mb-1">{block.title}</h4>
-                    <p className="text-sm md:text-base opacity-80 font-light italic">{block.subtitle}</p>
+                    <h4 className="text-xl md:text-4xl font-serif font-black tracking-tight mb-1 uppercase">{block.title}</h4>
+                    <p className="text-sm md:text-lg opacity-80 font-bold italic">{block.subtitle}</p>
                   </div>
                   <div className="flex flex-col items-end gap-4">
                     <motion.div 
@@ -279,13 +306,13 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
                         scale: isExpanded ? 1.2 : 1,
                         rotate: isExpanded ? [0, -10, 10, 0] : 0
                       }}
-                      className="text-4xl md:text-5xl filter drop-shadow-lg"
+                      className="text-5xl md:text-6xl filter drop-shadow-2xl"
                     >
                       {block.icon}
                     </motion.div>
                     <motion.div
                       animate={{ rotate: isExpanded ? 180 : 0 }}
-                      className="opacity-40 p-2 rounded-full bg-current/5"
+                      className="opacity-40 p-2 rounded-full bg-black/10"
                     >
                       <ChevronDown size={20} />
                     </motion.div>
@@ -301,19 +328,19 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
                       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
                       className="overflow-hidden"
                     >
-                      <div className="pt-8 border-t border-current/10 mt-6 relative z-10">
+                      <div className="pt-8 border-t border-black/10 mt-6 relative z-10">
                         {/* Whimsical Mini-icon - Moved to bottom right to avoid blocking words */}
-                        <div className="absolute bottom-0 right-0 text-4xl opacity-10 pointer-events-none">
+                        <div className="absolute bottom-0 right-0 text-6xl opacity-10 pointer-events-none">
                           {block.id === 'law' ? <Construction size={48} /> : <Sparkles size={48} />}
                         </div>
-                        <p className="text-sm md:text-lg leading-relaxed opacity-90 font-light max-w-2xl relative z-10">
+                        <p className="text-sm md:text-xl leading-relaxed opacity-90 font-bold max-w-2xl relative z-10">
                           {block.description}
                         </p>
                         
                         {block.id === 'law' && (
-                          <div className="mt-6 flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold uppercase tracking-widest relative z-10">
-                            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                            Loading Future...
+                          <div className="mt-6 flex items-center gap-2 text-white font-mono text-xs font-black uppercase tracking-widest relative z-10">
+                            <div className="w-2 h-2 rounded-full bg-white animate-pulse shadow-[0_0_10px_white]" />
+                            Assembly in Progress...
                           </div>
                         )}
                       </div>
@@ -321,9 +348,10 @@ export default function CareerArchitecture({ isDarkMode }: { isDarkMode?: boolea
                   )}
                 </AnimatePresence>
                 
-                {/* Gloss reflection effect */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/5 to-white/10 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-full h-1 bg-black/20" />
+                {/* Plastic Gloss Effect */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/20 pointer-events-none" />
+                <div className="absolute top-2 left-2 right-2 h-1 bg-white/20 rounded-full blur-[1px] opacity-50" />
+                <div className="absolute bottom-0 left-0 w-full h-2 bg-black/20" />
               </motion.div>
 
               {/* Architectural Dimension Lines */}

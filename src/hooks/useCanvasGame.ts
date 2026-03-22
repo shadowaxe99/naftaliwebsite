@@ -203,9 +203,35 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     const handleMouseDown = () => { mouse.clicked = true; mouse.down = true; };
     const handleMouseUp = () => { mouse.clicked = false; mouse.down = false; };
 
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isRunning) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.touches[0].clientX - rect.left;
+      mouse.y = e.touches[0].clientY - rect.top;
+    };
+    const handleTouchStart = (e: TouchEvent) => {
+      if (!isRunning) return;
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.touches[0].clientX - rect.left;
+      mouse.y = e.touches[0].clientY - rect.top;
+      mouse.down = true;
+      mouse.clicked = true;
+    };
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isRunning) return;
+      e.preventDefault();
+      mouse.down = false;
+      mouse.clicked = false;
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mousedown', handleMouseDown);
     window.addEventListener('mouseup', handleMouseUp);
+    canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+    canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     // --- Game States ---
     let particles: { x: number, y: number, vx: number, vy: number, size: number, color: string, alpha: number, life: number }[] = [];
@@ -489,20 +515,41 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       }));
     };
 
-    // 11. Menko (Card Flipping)
-    let menkoPlayerCard = { x: 0, y: 0, w: 60, h: 60, vx: 0, vy: 0, active: false, rotation: 0, spin: 0 };
-    let menkoTargetCard = { x: 0, y: 0, w: 70, h: 70, flipped: false, angle: 0, flipProgress: 0 };
+    // 11. Menko (Card Flipping - Enhanced)
+    let menkoPlayerCard = { x: 0, y: 0, w: 60, h: 60, vx: 0, vy: 0, active: false, rotation: 0, spin: 0, power: 0, charging: false, powerDir: 1 };
+    let menkoTargets: { x: number, y: number, w: number, h: number, flipped: boolean, angle: number, flipProgress: number, id: number, label: string }[] = [];
     let menkoScore = 0;
-    const initMenko = () => {
-      menkoTargetCard = { 
-        x: canvas.width / 2 - 35, 
-        y: canvas.height / 2 - 35, 
-        w: 70, h: 70, 
-        flipped: false, 
-        angle: Math.random() * Math.PI,
-        flipProgress: 0
-      };
+    let menkoWind = { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 };
+    let menkoWindTimer = 0;
+    let menkoLevel = 1;
+    let menkoThrowsLeft = 3;
+    const menkoLabels = ["侍", "忍者", "鬼", "天狗", "狐", "龍"];
+    
+    const initMenko = (resetLevel = false) => {
+      if (resetLevel) {
+        menkoLevel = 1;
+        menkoScore = 0;
+      }
+      menkoTargets = [];
+      const count = Math.min(5, 2 + Math.floor(menkoLevel / 2));
+      menkoThrowsLeft = Math.max(3, count + 1); // Give enough throws based on targets
+      
+      for (let i = 0; i < count; i++) {
+        menkoTargets.push({ 
+          x: 100 + Math.random() * (canvas.width - 200), 
+          y: 80 + Math.random() * (canvas.height * 0.45), 
+          w: 70, h: 70, 
+          flipped: false, 
+          angle: Math.random() * Math.PI,
+          flipProgress: 0,
+          id: i,
+          label: menkoLabels[Math.floor(Math.random() * menkoLabels.length)]
+        });
+      }
       menkoPlayerCard.active = false;
+      menkoPlayerCard.power = 0;
+      menkoPlayerCard.charging = false;
+      menkoWind = { x: (Math.random() - 0.5) * 6, y: (Math.random() - 0.5) * 2 };
     };
 
     // 7. Lanterns
@@ -576,7 +623,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       bonsaiInitialized = true;
       bonsaiTime = 0;
       playTone(200, 'sine', 0.5);
-      growBonsai(canvas.width / 2, canvas.height, canvas.height * 0.22, -Math.PI / 2, 24, 1);
+      growBonsai(canvas.width / 2, canvas.height - 40, canvas.height * 0.22, -Math.PI / 2, 24, 1);
     };
 
     // 11. Infringement (Whack-a-Mole)
@@ -938,23 +985,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           }
         }
       } else if (gameType === 'menko') {
-        if (!menkoPlayerCard.active) {
-          const dx = x - (menkoTargetCard.x + menkoTargetCard.w / 2);
-          const dy = y - (menkoTargetCard.y + menkoTargetCard.h / 2);
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          
-          menkoPlayerCard = { 
-            x, y: canvas.height, 
-            w: 60, h: 60, 
-            vx: (canvas.width / 2 - x) * 0.05, 
-            vy: -18, 
-            active: true,
-            rotation: 0,
-            spin: (Math.random() - 0.5) * 0.5
-          };
-          shake(2);
-          playNoise(0.1, 0.1);
-        }
+        // No click logic needed here, handled in draw loop via mouse.down
       }
     };
     canvas.addEventListener('click', handleCanvasClick);
@@ -1000,6 +1031,15 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         grad.addColorStop(1, '#1e1b4b');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+      } else if (gameType === 'brick') {
+        ctx.fillStyle = '#f8fafc'; // light slate
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Subtle document lines
+        ctx.strokeStyle = '#e2e8f0';
+        ctx.lineWidth = 1;
+        for (let i = 20; i < canvas.height; i += 20) {
+          ctx.beginPath(); ctx.moveTo(20, i); ctx.lineTo(canvas.width - 20, i); ctx.stroke();
+        }
       } else {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
       }
@@ -1009,9 +1049,9 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         if (paddle.x < 0) paddle.x = 0;
         if (paddle.x + paddle.w > canvas.width) paddle.x = canvas.width - paddle.w;
 
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#334155'; // dark slate paddle
         ctx.shadowBlur = 10;
-        ctx.shadowColor = 'rgba(255,255,255,0.5)';
+        ctx.shadowColor = 'rgba(51, 65, 85, 0.5)';
         ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
         ctx.shadowBlur = 0;
 
@@ -1024,7 +1064,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ballTrail.forEach((t, i) => {
           ctx.beginPath();
           ctx.arc(t.x, t.y, ball.radius * (i / 10), 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(229, 0, 0, ${i / 20})`;
+          ctx.fillStyle = `rgba(59, 130, 246, ${i / 20})`; // blue trail
           ctx.fill();
         });
 
@@ -1051,13 +1091,13 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ball.dy = -Math.abs(ball.dy);
           ball.dx = ((ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2)) * 6;
           shake(3);
-          spawnParticles(ball.x, ball.y, '#ffffff', 5);
+          spawnParticles(ball.x, ball.y, '#3b82f6', 5);
           playTone(600, 'sine', 0.1);
         }
 
         ctx.beginPath();
         ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#E50000';
+        ctx.fillStyle = '#3b82f6'; // blue ball
         ctx.fill();
         ctx.closePath();
 
@@ -1065,8 +1105,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         bricks.forEach(b => {
           if (!b.active) return;
           activeBricks++;
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+          ctx.fillStyle = '#94a3b8'; // slate bricks
+          ctx.strokeStyle = '#cbd5e1';
           ctx.lineWidth = 1;
           ctx.fillRect(b.x, b.y, b.w, b.h);
           ctx.strokeRect(b.x, b.y, b.w, b.h);
@@ -1074,7 +1114,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           if (ball.x > b.x && ball.x < b.x + b.w && ball.y - ball.radius < b.y + b.h && ball.y + ball.radius > b.y) {
             b.active = false;
             ball.dy *= -1;
-            spawnParticles(b.x + b.w / 2, b.y + b.h / 2, '#ffffff');
+            spawnParticles(b.x + b.w / 2, b.y + b.h / 2, '#94a3b8');
             shake(5);
             playTone(800, 'sine', 0.1);
           }
@@ -1279,6 +1319,35 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.fillStyle = waterGrad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Draw Lily Pads
+        ctx.fillStyle = 'rgba(21, 128, 61, 0.6)';
+        ctx.strokeStyle = 'rgba(21, 128, 61, 0.8)';
+        ctx.lineWidth = 2;
+        
+        const drawLilyPad = (x: number, y: number, r: number, angle: number) => {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(angle);
+          ctx.beginPath();
+          ctx.arc(0, 0, r, 0.2, Math.PI * 2 - 0.2);
+          ctx.lineTo(0, 0);
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+          // Veins
+          ctx.beginPath();
+          for(let i=0; i<5; i++) {
+            ctx.moveTo(0,0);
+            ctx.lineTo(Math.cos(i*Math.PI/2.5)*r*0.8, Math.sin(i*Math.PI/2.5)*r*0.8);
+          }
+          ctx.stroke();
+          ctx.restore();
+        };
+
+        drawLilyPad(canvas.width * 0.2, canvas.height * 0.3, 40, 0.5);
+        drawLilyPad(canvas.width * 0.8, canvas.height * 0.7, 50, -1.2);
+        drawLilyPad(canvas.width * 0.7, canvas.height * 0.2, 30, 2.1);
+
         if (mouse.clicked) {
           ripples.push({ x: mouse.x, y: mouse.y, r: 0, maxR: 100, alpha: 1 });
           koiFood.push({ x: mouse.x, y: mouse.y, life: 1000 });
@@ -1403,6 +1472,20 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Draw subtle branch
+        ctx.strokeStyle = 'rgba(87, 62, 53, 0.4)';
+        ctx.lineWidth = 15;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(canvas.width + 20, 50);
+        ctx.quadraticCurveTo(canvas.width * 0.7, 80, canvas.width * 0.4, 30);
+        ctx.stroke();
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width * 0.7, 70);
+        ctx.quadraticCurveTo(canvas.width * 0.5, 120, canvas.width * 0.3, 100);
+        ctx.stroke();
+
         const wind = (mouse.x - canvas.width / 2) / (canvas.width / 2) * 3;
         
         petals.forEach(p => {
@@ -1460,16 +1543,31 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
 
       } else if (gameType === 'tetris') {
         // Law Stacker (Improved)
+        // Draw Blueprint Grid
+        ctx.fillStyle = '#0f172a'; // dark slate
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.1)'; // light blue grid
+        ctx.lineWidth = 1;
+        for (let i = 0; i < canvas.width; i += 20) {
+          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+        }
+        for (let i = 0; i < canvas.height; i += 20) {
+          ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+        }
+
         // Draw Next Block Preview - moved down to avoid nav bar
         if (nextBlock) {
-          ctx.fillStyle = 'rgba(255,255,255,0.1)';
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.8)';
           ctx.fillRect(10, 60, 120, 50);
-          ctx.fillStyle = '#ffffff';
-          ctx.font = 'bold 10px sans-serif';
+          ctx.strokeStyle = 'rgba(56, 189, 248, 0.3)';
+          ctx.strokeRect(10, 60, 120, 50);
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 10px monospace';
           ctx.fillText('NEXT:', 20, 75);
           ctx.fillStyle = nextBlock.color;
-          ctx.font = 'bold 8px sans-serif';
-          ctx.fillText(nextBlock.word, 20, 90);
+          ctx.font = 'bold 10px monospace';
+          ctx.fillText(nextBlock.word, 20, 95);
         }
 
         if (currentBlock) {
@@ -1551,15 +1649,28 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.save();
           ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
           
+          // Block base
           ctx.fillStyle = b.color;
-          ctx.shadowBlur = 10;
+          ctx.shadowBlur = 15;
           ctx.shadowColor = b.color;
-          ctx.fillRect(-b.w / 2, -b.h / 2, b.w, b.h);
+          ctx.beginPath();
+          ctx.roundRect(-b.w / 2, -b.h / 2, b.w, b.h, 4);
+          ctx.fill();
           ctx.shadowBlur = 0;
           
-          ctx.strokeStyle = 'rgba(255,255,255,0.3)';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(-b.w / 2, -b.h / 2, b.w, b.h);
+          // Inner highlight for 3D effect
+          ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.roundRect(-b.w / 2 + 2, -b.h / 2 + 2, b.w - 4, b.h - 4, 2);
+          ctx.stroke();
+          
+          // Dark bottom edge
+          ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+          ctx.beginPath();
+          ctx.moveTo(-b.w / 2 + 4, b.h / 2 - 2);
+          ctx.lineTo(b.w / 2 - 4, b.h / 2 - 2);
+          ctx.stroke();
           
           ctx.fillStyle = '#ffffff';
           ctx.font = `bold ${b.rotated ? '10px' : '12px'} monospace`;
@@ -1917,47 +2028,106 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         });
 
       } else if (gameType === 'menko') {
-        ctx.fillStyle = '#451a03';
+        // Update Menko logic
+        if (!menkoPlayerCard.active && menkoThrowsLeft > 0) {
+          if (mouse.down) {
+            menkoPlayerCard.charging = true;
+            
+            // Oscillating power
+            menkoPlayerCard.power += 3 * menkoPlayerCard.powerDir;
+            if (menkoPlayerCard.power >= 100) {
+              menkoPlayerCard.power = 100;
+              menkoPlayerCard.powerDir = -1;
+            } else if (menkoPlayerCard.power <= 0) {
+              menkoPlayerCard.power = 0;
+              menkoPlayerCard.powerDir = 1;
+            }
+          } else if (menkoPlayerCard.charging) {
+            // Release throw
+            const powerScale = menkoPlayerCard.power / 100;
+            const throwAngle = Math.atan2(mouse.y - canvas.height, mouse.x - canvas.width / 2);
+            const throwSpeed = 15 + (15 * powerScale);
+            
+            menkoPlayerCard = { 
+              x: canvas.width / 2, y: canvas.height, 
+              w: 60, h: 60, 
+              vx: Math.cos(throwAngle) * throwSpeed + menkoWind.x, 
+              vy: Math.sin(throwAngle) * throwSpeed, 
+              active: true,
+              rotation: 0,
+              spin: (Math.random() - 0.5) * 0.8,
+              power: menkoPlayerCard.power,
+              charging: false,
+              powerDir: 1
+            };
+            menkoThrowsLeft--;
+            shake(5);
+            playNoise(0.1, 0.2);
+          }
+        }
+
+        // Background - Tatami mat style
+        ctx.fillStyle = '#d4d4d8';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Ground texture
-        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-        for (let i = 0; i < canvas.width; i += 40) {
+        // Tatami lines
+        ctx.strokeStyle = '#a1a1aa';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < canvas.width; i += 60) {
           ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
         }
 
-        // Target Card
-        ctx.save();
-        ctx.translate(menkoTargetCard.x + menkoTargetCard.w / 2, menkoTargetCard.y + menkoTargetCard.h / 2);
-        
-        if (menkoTargetCard.flipped) {
-          const flipScale = Math.cos(menkoTargetCard.flipProgress);
-          ctx.scale(1, flipScale);
+        // Wind effect visualization
+        menkoWindTimer += 0.05;
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 2;
+        for (let i = 0; i < 5; i++) {
+          const wx = (Math.sin(menkoWindTimer + i) * 20) + (canvas.width / 2) + (menkoWind.x * 50);
+          const wy = (Math.cos(menkoWindTimer * 0.5 + i) * 20) + (canvas.height / 2) + (menkoWind.y * 50);
+          ctx.beginPath();
+          ctx.moveTo(wx, wy);
+          ctx.lineTo(wx + menkoWind.x * 10, wy + menkoWind.y * 10);
+          ctx.stroke();
         }
         
-        ctx.rotate(menkoTargetCard.angle);
-        
-        // Card Base
-        ctx.shadowBlur = 15;
-        ctx.shadowColor = 'rgba(0,0,0,0.6)';
-        ctx.fillStyle = menkoTargetCard.flipped ? '#f3f4f6' : '#1e40af';
-        ctx.beginPath();
-        ctx.roundRect(-menkoTargetCard.w / 2, -menkoTargetCard.h / 2, menkoTargetCard.w, menkoTargetCard.h, 4);
-        ctx.fill();
-        ctx.shadowBlur = 0;
-        
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        
-        // Target art
-        ctx.fillStyle = menkoTargetCard.flipped ? '#111827' : '#fff';
-        ctx.font = 'bold 12px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(menkoTargetCard.flipped ? 'FLIPPED' : 'TARGET', 0, 0);
-        
-        ctx.restore();
+        // Target Cards
+        menkoTargets.forEach(target => {
+          ctx.save();
+          ctx.translate(target.x + target.w / 2, target.y + target.h / 2);
+          
+          if (target.flipped) {
+            const flipScale = Math.cos(target.flipProgress);
+            ctx.scale(1, flipScale);
+          }
+          
+          ctx.rotate(target.angle);
+          
+          // Card Base
+          ctx.shadowBlur = target.flipped ? 5 : 15;
+          ctx.shadowColor = 'rgba(0,0,0,0.6)';
+          ctx.fillStyle = target.flipped ? '#f3f4f6' : '#1e40af';
+          ctx.beginPath();
+          ctx.roundRect(-target.w / 2, -target.h / 2, target.w, target.h, 4);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+          
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          
+          // Target art
+          ctx.fillStyle = target.flipped ? '#111827' : '#fff';
+          ctx.font = 'bold 24px "Noto Serif JP", serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(target.flipped ? '負' : target.label, 0, 0);
+          
+          ctx.restore();
+
+          if (target.flipped && target.flipProgress < Math.PI) {
+            target.flipProgress += 0.2;
+          }
+        });
 
         // Player Card
         if (menkoPlayerCard.active) {
@@ -1965,6 +2135,9 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           menkoPlayerCard.y += menkoPlayerCard.vy;
           menkoPlayerCard.vy += 0.8; // Gravity
           menkoPlayerCard.rotation += menkoPlayerCard.spin;
+
+          // Apply wind to player card while in air
+          menkoPlayerCard.vx += menkoWind.x * 0.01;
 
           ctx.save();
           ctx.translate(menkoPlayerCard.x, menkoPlayerCard.y);
@@ -1979,39 +2152,159 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.strokeStyle = '#fff';
           ctx.lineWidth = 3;
           ctx.stroke();
+          
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 24px "Noto Serif JP", serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('勝', 0, 0);
+          
           ctx.restore();
 
-          // Collision / Wind effect
-          const dx = menkoPlayerCard.x - (menkoTargetCard.x + menkoTargetCard.w / 2);
-          const dy = menkoPlayerCard.y - (menkoTargetCard.y + menkoTargetCard.h / 2);
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          
-          if (dist < 60 && !menkoTargetCard.flipped && menkoPlayerCard.vy > 0) {
-            menkoTargetCard.flipped = true;
-            menkoTargetCard.flipProgress = 0;
-            menkoScore += 10;
-            shake(30);
-            spawnParticles(menkoTargetCard.x + menkoTargetCard.w / 2, menkoTargetCard.y + menkoTargetCard.h / 2, '#ffffff', 30);
-            playTone(200, 'square', 0.2);
+          // Collision / Wind effect on impact
+          if (menkoPlayerCard.y > canvas.height - 20 && menkoPlayerCard.vy > 0) {
+            shake(menkoPlayerCard.power / 2);
+            playNoise(0.2, 0.3);
+            
+            // Draw impact ring
+            ctx.beginPath();
+            ctx.arc(menkoPlayerCard.x, canvas.height - 20, 80 + (menkoPlayerCard.power * 0.5), 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            
+            let flipsThisSlam = 0;
+            menkoTargets.forEach(target => {
+              const dx = menkoPlayerCard.x - (target.x + target.w / 2);
+              const dy = menkoPlayerCard.y - (target.y + target.h / 2);
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              
+              // Wind shockwave flips cards
+            const impactRadius = 180 + (menkoPlayerCard.power * 1.8);
+            if (dist < impactRadius && !target.flipped) {
+                target.flipped = true;
+                target.flipProgress = 0;
+                flipsThisSlam++;
+                spawnParticles(target.x + target.w / 2, target.y + target.h / 2, '#ffffff', 20);
+                playTone(200 + (Math.random() * 100), 'square', 0.2);
+              }
+            });
+
+            if (flipsThisSlam > 0) {
+              const comboBonus = flipsThisSlam > 1 ? flipsThisSlam : 1;
+              menkoScore += 10 * menkoLevel * comboBonus;
+              if (flipsThisSlam > 1) {
+                shake(40);
+                playTone(400, 'triangle', 0.3);
+              }
+            }
+
+            // Check if all flipped
+            if (menkoTargets.every(t => t.flipped)) {
+              menkoLevel++;
+              setTimeout(() => initMenko(false), 1500);
+            } else if (menkoThrowsLeft <= 0) {
+              setTimeout(() => initMenko(true), 2000);
+            }
           }
 
           if (menkoPlayerCard.y > canvas.height + 100) {
             menkoPlayerCard.active = false;
-            if (menkoTargetCard.flipped) setTimeout(initMenko, 1000);
+            menkoPlayerCard.power = 0;
           }
         }
 
-        if (menkoTargetCard.flipped && menkoTargetCard.flipProgress < Math.PI) {
-          menkoTargetCard.flipProgress += 0.2;
+        // UI - Aiming Line
+        if (menkoPlayerCard.charging && menkoThrowsLeft > 0) {
+          const startX = canvas.width / 2;
+          const startY = canvas.height;
+          const throwAngle = Math.atan2(mouse.y - startY, mouse.x - startX);
+          const powerScale = menkoPlayerCard.power / 100;
+          const throwSpeed = 15 + (15 * powerScale);
+          
+          ctx.beginPath();
+          ctx.moveTo(startX, startY);
+          
+          // Draw predicted trajectory
+          let px = startX;
+          let py = startY;
+          let pvx = Math.cos(throwAngle) * throwSpeed + menkoWind.x;
+          let pvy = Math.sin(throwAngle) * throwSpeed;
+          
+          for (let i = 0; i < 20; i++) {
+            px += pvx;
+            py += pvy;
+            pvy += 0.8; // gravity
+            pvx += menkoWind.x * 0.01;
+            ctx.lineTo(px, py);
+            if (py > canvas.height) break;
+          }
+          
+          ctx.strokeStyle = `rgba(239, 68, 68, ${0.3 + powerScale * 0.7})`;
+          ctx.lineWidth = 2 + powerScale * 3;
+          ctx.setLineDash([5, 5]);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // Draw impact circle prediction
+          if (py >= canvas.height - 20) {
+            ctx.beginPath();
+            ctx.arc(px, canvas.height - 20, 180 + (menkoPlayerCard.power * 1.8), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(239, 68, 68, ${0.1 + powerScale * 0.2})`;
+            ctx.fill();
+          }
         }
 
-        ctx.fillStyle = '#ffffff';
+        // UI - Power Bar
+        if (menkoPlayerCard.charging && menkoThrowsLeft > 0) {
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.fillRect(canvas.width / 2 - 50, canvas.height - 60, 100, 10);
+          
+          // Color based on power (green -> yellow -> red)
+          const r = Math.min(255, (menkoPlayerCard.power / 50) * 255);
+          const g = Math.min(255, ((100 - menkoPlayerCard.power) / 50) * 255);
+          ctx.fillStyle = `rgb(${r}, ${g}, 0)`;
+          
+          ctx.fillRect(canvas.width / 2 - 50, canvas.height - 60, menkoPlayerCard.power, 10);
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('POWER', canvas.width / 2, canvas.height - 65);
+        }
+
+        // Wind Indicator
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 12px monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`WIND: ${menkoWind.x > 0 ? '→' : '←'} ${Math.abs(menkoWind.x).toFixed(1)}`, 10, 50);
+        
+        ctx.fillStyle = '#1e293b';
         ctx.font = 'bold 14px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(menkoTargetCard.flipped ? 'IPPON! (一本!) 🔥' : 'SLAM THE GROUND! 💥', canvas.width / 2, canvas.height - 30);
+        
+        let statusText = '';
+        if (menkoTargets.every(t => t.flipped)) {
+          statusText = 'LEVEL CLEAR! 🔥';
+        } else if (menkoThrowsLeft <= 0 && !menkoPlayerCard.active) {
+          statusText = 'GAME OVER! RESTARTING... 💀';
+        }
+        ctx.fillText(statusText, canvas.width / 2, canvas.height - 30);
         
         ctx.textAlign = 'left';
         ctx.fillText(`Score: ${menkoScore}`, 10, 30);
+        ctx.fillText(`Level: ${menkoLevel}`, 10, 70);
+        
+        // Throws left indicator
+        ctx.textAlign = 'right';
+        ctx.fillText(`Throws Left: ${menkoThrowsLeft}`, canvas.width - 10, 30);
+        
+        // Draw throw tokens
+        for(let i=0; i < Math.max(0, menkoThrowsLeft); i++) {
+          ctx.fillStyle = '#dc2626';
+          ctx.fillRect(canvas.width - 25 - (i * 20), 40, 15, 15);
+          ctx.strokeStyle = '#fff';
+          ctx.strokeRect(canvas.width - 25 - (i * 20), 40, 15, 15);
+        }
 
       } else if (gameType === 'lanterns') {
         // Deep night sky gradient
@@ -2021,6 +2314,15 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         grad.addColorStop(1, '#312e81');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Moon
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.shadowBlur = 30;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+        ctx.beginPath();
+        ctx.arc(canvas.width * 0.8, canvas.height * 0.2, 30, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
 
         // Water reflection area at bottom
         ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
@@ -2106,8 +2408,41 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         });
 
       } else if (gameType === 'bonsai') {
+        // Background
+        const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, '#fdfbf7');
+        grad.addColorStop(1, '#e5e0d8');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Draw Sun/Moon
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.1)';
+        ctx.beginPath();
+        ctx.arc(canvas.width * 0.8, canvas.height * 0.3, 60, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.05)';
+        ctx.beginPath();
+        ctx.arc(canvas.width * 0.8, canvas.height * 0.3, 80, 0, Math.PI * 2);
+        ctx.fill();
+
         bonsaiTime += 0.02;
         
+        // Draw Pot
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height - 40);
+        ctx.fillStyle = '#292524'; // Dark stone
+        ctx.beginPath();
+        ctx.moveTo(-60, 0);
+        ctx.lineTo(60, 0);
+        ctx.lineTo(50, 30);
+        ctx.lineTo(-50, 30);
+        ctx.closePath();
+        ctx.fill();
+        // Pot rim
+        ctx.fillStyle = '#44403c';
+        ctx.fillRect(-65, -5, 130, 10);
+        ctx.restore();
+
         // Draw branches with gentle sway
         branches.forEach(b => {
           // Sway logic based on generation (thinner branches sway more)
@@ -2165,14 +2500,15 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.fillStyle = '#fef2f2';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Grid
-        ctx.strokeStyle = 'rgba(239, 68, 68, 0.1)';
+        // Moving Grid
+        const gridOffset = (Date.now() / 50) % 40;
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.15)';
         ctx.lineWidth = 1;
-        for (let i = 0; i < canvas.width; i += 40) {
-          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+        for (let i = -40; i < canvas.width; i += 40) {
+          ctx.beginPath(); ctx.moveTo(i + gridOffset, 0); ctx.lineTo(i + gridOffset, canvas.height); ctx.stroke();
         }
-        for (let i = 0; i < canvas.height; i += 40) {
-          ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
+        for (let i = -40; i < canvas.height; i += 40) {
+          ctx.beginPath(); ctx.moveTo(0, i + gridOffset); ctx.lineTo(canvas.width, i + gridOffset); ctx.stroke();
         }
 
         if (!infringementGameOver) {
@@ -2212,25 +2548,35 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.scale(scale, scale);
           
           // Shadow
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = item.isGolden ? 'rgba(251, 191, 36, 0.5)' : 'rgba(239, 68, 68, 0.3)';
+          ctx.shadowBlur = 15;
+          ctx.shadowColor = item.isGolden ? 'rgba(251, 191, 36, 0.6)' : 'rgba(239, 68, 68, 0.4)';
           
+          // Outer dashed ring (like a stamp)
+          ctx.strokeStyle = item.isGolden ? '#fbbf24' : '#ef4444';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath();
+          ctx.arc(0, 0, item.r + 4, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          
+          // Inner solid circle
           ctx.fillStyle = item.isGolden ? '#fbbf24' : '#ef4444';
           ctx.beginPath();
           ctx.arc(0, 0, item.r, 0, Math.PI * 2);
           ctx.fill();
           
           ctx.fillStyle = item.isGolden ? '#92400e' : '#ffffff';
-          ctx.font = 'bold 20px monospace';
+          ctx.font = 'bold 22px monospace';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
           ctx.fillText(item.type, 0, 0);
           
           // Timer ring
           ctx.strokeStyle = item.isGolden ? '#92400e' : '#ffffff';
-          ctx.lineWidth = 3;
+          ctx.lineWidth = 4;
           ctx.beginPath();
-          ctx.arc(0, 0, item.r - 5, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * (item.timer / item.maxTimer)));
+          ctx.arc(0, 0, item.r - 6, -Math.PI / 2, -Math.PI / 2 + (Math.PI * 2 * (item.timer / item.maxTimer)));
           ctx.stroke();
           
           ctx.restore();

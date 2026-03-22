@@ -3,20 +3,26 @@ import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
 import { 
   BookOpen, Briefcase, GraduationCap, Mail, MapPin, Phone, Globe, 
   Mic, PenTool, ChevronRight, Command, Search, Gamepad2,
-  Download, ArrowUpRight, Terminal, Database, Code, Moon, Sun, FileText, Volume2, VolumeX
+  Download, ArrowUpRight, Terminal, Database, Code, Moon, Sun, FileText, Volume2, VolumeX, MousePointer2
 } from 'lucide-react';
 import { Analytics } from "@vercel/analytics/react";
 import ArcadeCard from './ArcadeCard';
 import CareerArchitecture from './CareerArchitecture';
 import ResumeModal from './ResumeModal';
 import CopyButton from './CopyButton';
+import CommandMenu from './CommandMenu';
+import LegalInsights from './LegalInsights';
 
 interface PortfolioProps {
   isDarkMode: boolean;
   toggleTheme: () => void;
+  globalMute: boolean;
+  setGlobalMute: (mute: boolean) => void;
+  cursorType: 'anime' | 'mecha' | 'default';
+  setCursorType: (type: 'anime' | 'mecha' | 'default') => void;
 }
 
-export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
+export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlobalMute, cursorType, setCursorType }: PortfolioProps) {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [resumeOpen, setResumeOpen] = useState(false);
@@ -24,6 +30,17 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
   const [isBookExpanded, setIsBookExpanded] = useState(false);
   const [isGlobalSoundOn, setIsGlobalSoundOn] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
+  const bookSectionRef = useRef<HTMLDivElement>(null);
+
+  const toggleBookSynopsis = () => {
+    const newState = !isBookExpanded;
+    setIsBookExpanded(newState);
+    if (newState) {
+      setTimeout(() => {
+        bookSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 100);
+    }
+  };
 
   // Scroll Progress
   const { scrollYProgress } = useScroll();
@@ -100,57 +117,13 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
       />
 
       {/* Cmd+K Overlay */}
-      <AnimatePresence>
-        {cmdOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-md z-[110] flex items-center justify-center p-4"
-            onClick={() => setCmdOpen(false)}
-          >
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className={`${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} w-full max-w-2xl rounded-3xl border shadow-2xl overflow-hidden`}
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="p-6 border-b border-neutral-800/10 flex items-center gap-4">
-                <Search className="text-neutral-500" size={20} />
-                <input 
-                  ref={inputRef}
-                  type="text" 
-                  placeholder="Search projects, skills, or experience..." 
-                  className="bg-transparent border-none outline-none w-full text-lg font-light"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                />
-                <div className="flex items-center gap-1 px-2 py-1 rounded-md bg-neutral-800/50 border border-neutral-700 text-[10px] font-mono text-neutral-500">
-                  <span className="text-[12px]">ESC</span>
-                </div>
-              </div>
-              <div className="p-4 max-h-[400px] overflow-y-auto">
-                <div className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest px-4 mb-4">Quick Actions</div>
-                <button onClick={toggleTheme} className={`w-full flex items-center justify-between p-4 rounded-2xl ${isDarkMode ? 'hover:bg-neutral-800' : 'hover:bg-neutral-50'} transition-colors group`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-100'}`}>
-                      {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
-                    </div>
-                    <span className="font-medium">Switch to {isDarkMode ? 'Light' : 'Dark'} Mode</span>
-                  </div>
-                  <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
-                <button onClick={() => setResumeOpen(true)} className={`w-full flex items-center justify-between p-4 rounded-2xl ${isDarkMode ? 'hover:bg-neutral-800' : 'hover:bg-neutral-50'} transition-colors group`}>
-                  <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${isDarkMode ? 'bg-neutral-800' : 'bg-neutral-100'}`}>
-                      <Download size={18} />
-                    </div>
-                    <span className="font-medium">Download Resume</span>
-                  </div>
-                  <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <CommandMenu 
+        isOpen={cmdOpen} 
+        onClose={() => setCmdOpen(false)} 
+        isDarkMode={isDarkMode} 
+        toggleTheme={toggleTheme} 
+        openResume={() => setResumeOpen(true)} 
+      />
 
       {/* Navigation */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${isDarkMode ? 'bg-neutral-950/80' : 'bg-white/80'} backdrop-blur-xl border-b ${isDarkMode ? 'border-neutral-800' : 'border-neutral-200'}`}>
@@ -173,6 +146,7 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
             <div className="hidden md:flex items-center gap-8 text-[11px] font-bold uppercase tracking-[0.2em] text-neutral-500">
               <a href="#about" className="hover:text-blue-500 transition-colors">About</a>
               <a href="#experience" className="hover:text-blue-500 transition-colors">Experience</a>
+              <a href="#insights" className="hover:text-blue-500 transition-colors">Analysis</a>
               <a href="#canvas" className="hover:text-blue-500 transition-colors">Playground</a>
               <a href="#contact" className="hover:text-blue-500 transition-colors">Contact</a>
             </div>
@@ -180,13 +154,35 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
             <div className="h-6 w-px bg-neutral-800/10 hidden sm:block" />
             
             <div className="flex items-center gap-2">
+              {/* Cursor Dropdown */}
+              <div className="relative group/cursor hidden sm:block">
+                <button className={`p-2.5 rounded-xl ${isDarkMode ? 'hover:bg-neutral-800 text-neutral-400' : 'hover:bg-neutral-100 text-neutral-500'} transition-all`} title="Cursor Style">
+                  <MousePointer2 size={18} />
+                </button>
+                <div className={`absolute top-full right-0 mt-2 w-48 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} border rounded-xl shadow-xl opacity-0 invisible group-hover/cursor:opacity-100 group-hover/cursor:visible transition-all z-50 overflow-hidden`}>
+                  <button onClick={() => setCursorType('anime')} className={`w-full text-left px-4 py-2.5 text-xs font-medium ${isDarkMode ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'} ${cursorType === 'anime' ? 'text-blue-500' : ''}`}>Anime (Red) - Default</button>
+                  <button onClick={() => setCursorType('mecha')} className={`w-full text-left px-4 py-2.5 text-xs font-medium ${isDarkMode ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'} ${cursorType === 'mecha' ? 'text-blue-500' : ''}`}>Mecha (Cyan)</button>
+                  <button onClick={() => setCursorType('default')} className={`w-full text-left px-4 py-2.5 text-xs font-medium ${isDarkMode ? 'hover:bg-neutral-800' : 'hover:bg-neutral-100'} ${cursorType === 'default' ? 'text-blue-500' : ''}`}>System Standard</button>
+                </div>
+              </div>
+
+              {/* Mute Button */}
+              <button 
+                onClick={() => setGlobalMute(!globalMute)}
+                className={`p-2.5 rounded-xl ${isDarkMode ? 'hover:bg-neutral-800 text-neutral-400' : 'hover:bg-neutral-100 text-neutral-500'} transition-all`}
+                title={globalMute ? "Unmute UI Sounds" : "Mute UI Sounds"}
+              >
+                {globalMute ? <VolumeX size={18} /> : <Volume2 size={18} />}
+              </button>
+
               <button 
                 onClick={() => setCmdOpen(true)}
-                className={`p-2.5 rounded-xl ${isDarkMode ? 'hover:bg-neutral-800 text-neutral-400' : 'hover:bg-neutral-100 text-neutral-500'} transition-all group relative`}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${isDarkMode ? 'border-neutral-800 bg-neutral-900 hover:bg-neutral-800 text-neutral-400' : 'border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-neutral-500'} transition-all group relative`}
                 title="Search (Cmd+K)"
               >
-                <Search size={18} />
-                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 px-2 py-1 bg-neutral-800 text-[8px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Search (⌘K)</span>
+                <Search size={14} />
+                <span className="text-xs hidden sm:inline-block">Search...</span>
+                <kbd className={`hidden sm:inline-block text-[10px] px-1.5 py-0.5 rounded font-mono ${isDarkMode ? 'bg-neutral-800 text-neutral-500' : 'bg-neutral-200 text-neutral-500'}`}>⌘K</kbd>
               </button>
               <a 
                 href="#canvas"
@@ -210,7 +206,7 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
       <main className="relative z-10 pt-20">
         <div className="max-w-7xl mx-auto px-6">
           {/* Hero Section */}
-          <section className="min-h-[85vh] flex flex-col justify-center py-20 relative">
+          <section className="min-h-[70vh] flex flex-col justify-center py-20 relative">
             {/* Background Calligraphy - Nathan (ネイサン) */}
             <motion.div 
               variants={float}
@@ -221,14 +217,14 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
               <motion.span variants={shimmer} animate="animate">ネイサン</motion.span>
             </motion.div>
 
-            {/* Background Calligraphy - Copyright & Trademark Law (著作権と商標法) */}
+            {/* Background Calligraphy - Copyright & Trademark Law (著作権・商標法) */}
             <motion.div 
               variants={float}
               animate="animate"
               className={`absolute bottom-10 left-4 text-[6vw] font-bold pointer-events-none select-none z-0 transition-colors duration-700 ${isDarkMode ? 'text-white/[0.12]' : 'text-neutral-900/[0.08]'}`}
               style={{ fontFamily: '"Noto Serif JP", serif' }}
             >
-              <motion.span variants={shimmer} animate="animate">著作権と商標法</motion.span>
+              <motion.span variants={shimmer} animate="animate">著作権・商標法</motion.span>
             </motion.div>
 
             <motion.div 
@@ -315,20 +311,20 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
           {/* About Section - Bento Grid */}
           <motion.section 
             id="about" 
-            className="py-32 relative"
+            className="py-20 relative"
             initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
               {/* Main Bio Card */}
               <div className={`col-span-1 md:col-span-8 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-[2.5rem] p-8 md:p-12 border relative overflow-hidden group`}>
-                {/* Background Calligraphy - About Me (私について) */}
+                {/* Background Calligraphy - About Me (略歴) */}
                 <motion.div 
                   variants={float}
                   animate="animate"
                   className={`absolute top-4 right-4 text-[8vw] font-bold pointer-events-none select-none z-0 transition-colors duration-700 ${isDarkMode ? 'text-white/[0.15]' : 'text-neutral-900/[0.1]'}`}
                   style={{ fontFamily: '"Noto Serif JP", serif' }}
                 >
-                  <motion.span variants={shimmer} animate="animate">私について</motion.span>
+                  <motion.span variants={shimmer} animate="animate">略歴</motion.span>
                 </motion.div>
 
                 <div className="relative z-10">
@@ -351,14 +347,14 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
 
               {/* Education Card */}
               <div className={`col-span-1 md:col-span-4 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-white border-neutral-200'} rounded-[2.5rem] p-8 md:p-10 border relative overflow-hidden group`}>
-                {/* Background Calligraphy - Intellectual Property (知的財産) */}
+                {/* Background Calligraphy - Jurisprudence (法学) */}
                 <motion.div 
                   variants={float}
                   animate="animate"
                   className={`absolute bottom-4 right-4 text-[5vw] font-bold pointer-events-none select-none z-0 transition-colors duration-700 ${isDarkMode ? 'text-white/[0.15]' : 'text-neutral-900/[0.1]'}`}
                   style={{ fontFamily: '"Noto Serif JP", serif' }}
                 >
-                  <motion.span variants={shimmer} animate="animate">知的財産</motion.span>
+                  <motion.span variants={shimmer} animate="animate">法学</motion.span>
                 </motion.div>
 
                 <div className="relative z-10">
@@ -388,7 +384,7 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
           {/* Experience Section - Career Architecture */}
           <motion.section 
             id="experience" 
-            className="py-32"
+            className="py-20"
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
           >
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
@@ -398,18 +394,18 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
                 </div>
                 <h2 className={`text-5xl md:text-7xl font-serif font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'} tracking-tight`}>Professional <br /> Architecture</h2>
               </div>
-              <p className={`max-w-md ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'} text-lg font-light leading-relaxed`}>
-                A chronological blueprint of my professional evolution, from creative production to legal advocacy.
-              </p>
             </div>
 
             <CareerArchitecture isDarkMode={isDarkMode} />
           </motion.section>
 
+          {/* Legal Insights Section */}
+          <LegalInsights isDarkMode={isDarkMode} globalMute={globalMute} />
+
           {/* Projects/Creative Section */}
           <motion.section 
             id="projects" 
-            className="py-32"
+            className="py-20"
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.8 }}
           >
             <div className="flex items-center gap-4 mb-16">
@@ -419,7 +415,10 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Featured Book */}
-              <div className={`col-span-1 md:col-span-2 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-900'} text-white rounded-3xl p-8 md:p-16 relative overflow-hidden group border shadow-2xl transition-all duration-700`}>
+              <div 
+                ref={bookSectionRef}
+                className={`col-span-1 md:col-span-2 ${isDarkMode ? 'bg-neutral-900 border-neutral-800' : 'bg-neutral-900'} text-white rounded-3xl p-8 md:p-16 relative overflow-hidden group border shadow-2xl transition-all duration-700`}
+              >
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/5 rounded-full blur-[100px] -mr-40 -mt-40 group-hover:bg-white/10 transition-colors duration-700"></div>
                 
                 {/* Blueprint Grid Overlay */}
@@ -437,11 +436,11 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
                     </p>
                     
                     <button 
-                      onClick={() => setIsBookExpanded(!isBookExpanded)}
+                      onClick={toggleBookSynopsis}
                       className="flex items-center gap-3 text-xs font-bold text-white/40 hover:text-white transition-all uppercase tracking-[0.3em] mb-6 group/btn"
                     >
                       {isBookExpanded ? 'Hide Synopsis' : 'View Synopsis'} 
-                      <ChevronRight size={16} className={`transition-transform duration-300 ${isBookExpanded ? 'rotate-90' : 'group-hover/btn:translate-x-1'}`} />
+                      <ChevronRight size={16} className={`transition-transform duration-300 ${isBookExpanded ? 'rotate-90 text-white' : 'group-hover/btn:translate-x-1'}`} />
                     </button>
 
                     <AnimatePresence>
@@ -536,7 +535,7 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
           {/* Contact Section */}
           <motion.section 
             id="contact" 
-            className={`py-32 border-t ${isDarkMode ? 'border-neutral-800' : 'border-neutral-200'} relative overflow-hidden`}
+            className={`py-20 border-t ${isDarkMode ? 'border-neutral-800' : 'border-neutral-200'} relative overflow-hidden`}
             initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: "-100px" }} transition={{ duration: 0.8 }}
           >
             {/* Background Accent */}
@@ -547,7 +546,12 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
               <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-grid-pattern" />
               
               <div className="mb-12 relative z-10">
-                <div className="text-neutral-300 font-bold text-3xl mb-4 opacity-40 select-none">連絡先</div>
+                <div 
+                  className="text-neutral-300 font-bold text-5xl mb-4 opacity-20 select-none"
+                  style={{ fontFamily: '"Noto Serif JP", serif' }}
+                >
+                  連絡先
+                </div>
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-500 text-[10px] font-bold uppercase tracking-[0.3em] mb-8">
                   Closing Statement
                 </div>
@@ -596,7 +600,7 @@ export default function Portfolio({ isDarkMode, toggleTheme }: PortfolioProps) {
         <p className="mt-2 text-xs font-mono">J.D. Candidate &middot; Author &middot; Creative Consultant</p>
       </footer>
       <Analytics />
-      <ResumeModal isOpen={resumeOpen} onClose={() => setResumeOpen(false)} isDarkMode={isDarkMode} />
+      <ResumeModal isOpen={resumeOpen} onClose={() => setResumeOpen(false)} isDarkMode={isDarkMode} globalMute={globalMute} />
     </div>
   );
 }

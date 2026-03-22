@@ -1,68 +1,37 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Printer, Mail, Phone, MapPin, Download, ExternalLink } from 'lucide-react';
+import { playUISound } from '../utils/sound';
 
 interface ResumeModalProps {
   isOpen: boolean;
   onClose: () => void;
   isDarkMode: boolean;
+  globalMute: boolean;
 }
 
-export default function ResumeModal({ isOpen, onClose, isDarkMode }: ResumeModalProps) {
+export default function ResumeModal({ isOpen, onClose, isDarkMode, globalMute }: ResumeModalProps) {
+  useEffect(() => {
+    if (isOpen) {
+      playUISound('expand', globalMute);
+    } else {
+      playUISound('collapse', globalMute);
+    }
+  }, [isOpen, globalMute]);
+
   const handlePrint = () => {
-    window.print();
+    document.body.classList.add('printing');
+    setTimeout(() => {
+      window.print();
+      document.body.classList.remove('printing');
+    }, 100);
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          <style>
-            {`
-              @media print {
-                body > *:not(#root) {
-                  display: none !important;
-                }
-                #root > div {
-                  overflow: visible !important;
-                }
-                #root > div > *:not(.resume-modal-wrapper) {
-                  display: none !important;
-                }
-                .resume-modal-wrapper {
-                  position: static !important;
-                  display: block !important;
-                  height: auto !important;
-                  overflow: visible !important;
-                }
-                .resume-modal-backdrop, .no-print {
-                  display: none !important;
-                }
-                #resume-print-container {
-                  position: static !important;
-                  width: 100% !important;
-                  max-width: none !important;
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  box-shadow: none !important;
-                  background: white !important;
-                  color: black !important;
-                  overflow: visible !important;
-                  height: auto !important;
-                  transform: none !important;
-                }
-                .resume-content {
-                  overflow: visible !important;
-                  padding: 0 !important;
-                }
-                @page {
-                  margin: 0.5in;
-                }
-              }
-            `}
-          </style>
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 resume-modal-wrapper">
-            <motion.div
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 resume-modal-wrapper">
+          <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -309,7 +278,6 @@ export default function ResumeModal({ isOpen, onClose, isDarkMode }: ResumeModal
             </div>
           </motion.div>
           </div>
-        </>
       )}
     </AnimatePresence>
   );
