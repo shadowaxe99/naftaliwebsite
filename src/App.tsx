@@ -5,8 +5,19 @@
 
 import { motion } from 'motion/react';
 import { Scale, BookOpen, GraduationCap, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 export default function App() {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -40,8 +51,17 @@ export default function App() {
   ];
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#FDFBF7] text-[#1A1C20] flex flex-col items-center justify-center p-6 font-sans selection:bg-[#D97757] selection:text-white">
+    <div className="min-h-screen relative overflow-hidden bg-[#FDFBF7] text-[#1A1C20] flex flex-col items-center justify-center p-6 font-sans selection:bg-[#D97757] selection:text-white cursor-none">
       
+      {/* Custom Cursor */}
+      <motion.div
+        className="fixed top-0 left-0 w-6 h-6 rounded-full border border-[#D97757] pointer-events-none z-[9999] flex items-center justify-center"
+        animate={{ x: mousePosition.x - 12, y: mousePosition.y - 12 }}
+        transition={{ type: 'spring', stiffness: 500, damping: 28, mass: 0.5 }}
+      >
+        <div className="w-1.5 h-1.5 rounded-full bg-[#D97757]" />
+      </motion.div>
+
       {/* Texture Overlay for Editorial Feel */}
       <div 
         className="absolute inset-0 opacity-[0.04] pointer-events-none z-50" 
