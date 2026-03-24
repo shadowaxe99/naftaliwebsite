@@ -4,13 +4,23 @@ export type GameType = 'brick' | 'galaga' | 'zen' | 'koi' | 'sakura' | 'tetris' 
 
 let globalAudioCtx: AudioContext | null = null;
 
-export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabled: boolean = false) {
+export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabled: boolean = false, isDarkMode: boolean = true, hardMode: boolean = false) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const soundEnabledRef = useRef(soundEnabled);
+  const isDarkModeRef = useRef(isDarkMode);
+  const hardModeRef = useRef(hardMode);
 
   useEffect(() => {
     soundEnabledRef.current = soundEnabled;
   }, [soundEnabled]);
+
+  useEffect(() => {
+    isDarkModeRef.current = isDarkMode;
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    hardModeRef.current = hardMode;
+  }, [hardMode]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -201,7 +211,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       mouse.y = y;
     };
     const handleMouseDown = () => { mouse.clicked = true; mouse.down = true; };
-    const handleMouseUp = () => { mouse.clicked = false; mouse.down = false; };
+    const handleMouseUp = () => { mouse.down = false; };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isRunning) return;
@@ -214,16 +224,49 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       if (!isRunning) return;
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
-      mouse.x = e.touches[0].clientX - rect.left;
-      mouse.y = e.touches[0].clientY - rect.top;
+      const touchX = e.touches[0].clientX - rect.left;
+      const touchY = e.touches[0].clientY - rect.top;
+      mouse.x = touchX;
+      mouse.y = touchY;
       mouse.down = true;
       mouse.clicked = true;
+
+      if (gameType === 'tetris' && currentTetromino && !tetrisGameOver) {
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        if (touchY > height * 0.75) {
+          while (!checkTetrisCollision(currentTetromino.x, currentTetromino.y + 1, currentTetromino.shape)) {
+            currentTetromino.y++;
+          }
+          lockTetrisBlock();
+        } else if (touchY < height * 0.25) {
+          rotateTetrisBlock();
+          playTone(400, 'triangle', 0.05);
+        } else {
+          if (touchX < width * 0.33) {
+            if (!checkTetrisCollision(currentTetromino.x - 1, currentTetromino.y, currentTetromino.shape)) {
+              currentTetromino.x--;
+              playTone(300, 'sine', 0.05);
+            }
+          } else if (touchX > width * 0.66) {
+            if (!checkTetrisCollision(currentTetromino.x + 1, currentTetromino.y, currentTetromino.shape)) {
+              currentTetromino.x++;
+              playTone(300, 'sine', 0.05);
+            }
+          } else {
+            if (!checkTetrisCollision(currentTetromino.x, currentTetromino.y + 1, currentTetromino.shape)) {
+              currentTetromino.y++;
+              playTone(200, 'sine', 0.05);
+            }
+          }
+        }
+      }
     };
     const handleTouchEnd = (e: TouchEvent) => {
       if (!isRunning) return;
       e.preventDefault();
       mouse.down = false;
-      mouse.clicked = false;
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -286,8 +329,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     const shake = (amt: number) => { screenShake = Math.max(screenShake, amt); };
 
     // 1. Brick Breaker
-    let ball = { x: canvas.width / 2, y: canvas.height - 50, dx: 5, dy: -5, radius: 6 };
-    let ballTrail: { x: number, y: number }[] = [];
+    let balls = [{ x: canvas.width / 2, y: canvas.height - 50, dx: 5, dy: -5, radius: 6 }];
+    let ballTrails: { x: number, y: number }[][] = [[]];
     let paddle = { w: 100, h: 12, x: canvas.width / 2 - 50, y: canvas.height - 30 };
     let bricks: any[] = [];
     const initBricks = () => {
@@ -308,9 +351,13 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     // 2. Galaga
     let player = { w: 40, h: 40, x: canvas.width / 2 - 20, y: canvas.height - 60 };
     let projectiles: any[] = [];
+    let enemyProjectiles: any[] = [];
     let enemies: any[] = [];
     let enemyDir = 2;
     let lastShot = 0;
+    let galagaScore = 0;
+    let galagaWave = 1;
+    let galagaGameOver = false;
     let stars: { x: number, y: number, size: number, speed: number }[] = [];
     const initStars = () => {
       stars = [];
@@ -321,7 +368,10 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     const initEnemies = () => {
       initStars();
       enemies = [];
-      const rows = 3;
+      projectiles = [];
+      enemyProjectiles = [];
+      enemyDir = 0.6 + (galagaWave * 0.2);
+      const rows = Math.min(4, 2 + Math.floor(galagaWave / 3));
       const cols = Math.floor(canvas.width / 60) - 1;
       const offsetX = (canvas.width - (cols * 50)) / 2;
       for (let r = 0; r < rows; r++) {
@@ -390,13 +440,14 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
 
     // 6. Tetris (Law Stacker - Career Builder Edition)
     const tetrisWords = [
-      "LAW", "JURY", "TORT", "CASE", "RULE", "IP", "WIPO", "NYLS", "DMCA", "BOND",
-      "DEED", "LIEN", "OATH", "PLEA", "WRIT", "CODE", "ACT", "BILL", "FEES", "FILE",
-      "HEAR", "JUDG", "LAWS", "LEGL", "MOTN", "ORDR", "PART", "SUIT", "TERM", "TEST",
-      "VOID", "WILL", "WORK", "BAR", "COURT", "DOCKET", "ESTATE", "ETHICS", "GUILTY",
-      "INTENT", "JUDGE", "LAWYER", "MOTION", "NOTICE", "OBJECT", "PARENT", "POLICY",
-      "REASON", "RECORD", "REFORM", "RIGHTS", "SEARCH", "STATUS", "SYSTEM", "TENANT",
-      "THEORY", "TREATY", "TRIAL", "TRUST", "VERDICT", "WITNESS"
+      "NYLS", "WIPO", "DMCA", "SONY", "UMPG", "TORT", "CASE", "RULE", "CODE", "DATA",
+      "TECH", "ARTS", "SONG", "BAND", "TOUR", "DEAL", "SIGN", "FAIR", "MARK", "COPY",
+      "FILE", "SUIT", "HEAR", "PLEA", "OATH", "DEED", "LIEN", "WRIT", "BILL", "FEES",
+      "TERM", "VOID", "WILL", "WORK", "USER", "BYTE", "NODE", "WEB3", "APPS", "GAME",
+      "PLAY", "HACK", "BUGS", "IDEA", "PLAN", "GOAL", "LEAD", "TEAM", "FIRM", "RISK",
+      "SAFE", "CASH", "FUND", "PACT", "BOND", "VOTE", "VETO", "LAWS", "STAT", "INFO",
+      "SYNC", "LINK", "HOST", "SITE", "PORT", "BASE", "CORE", "ROOT", "PATH", "MODE",
+      "TEST", "PASS", "FAIL", "TRUE", "MOCK", "STUB", "APIS", "REST", "JSON", "HTML"
     ];
     const tetrisColors = ['#E50000', '#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6'];
     const tetrominoes = [
@@ -419,6 +470,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     let tetrisLastDrop = Date.now();
     let tetrisDropInterval = 500;
     let tetrisScore = 0;
+    let tetrisHighScore = parseInt(localStorage.getItem('tetrisHighScore') || '0', 10);
     let tetrisLevel = 1;
     let tetrisLines = 0;
     let tetrisGameOver = false;
@@ -535,6 +587,10 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       if (linesCleared > 0) {
         tetrisLines += linesCleared;
         tetrisScore += [0, 100, 300, 500, 800][linesCleared] * tetrisLevel;
+        if (tetrisScore > tetrisHighScore) {
+          tetrisHighScore = tetrisScore;
+          localStorage.setItem('tetrisHighScore', tetrisHighScore.toString());
+        }
         tetrisLevel = Math.floor(tetrisLines / 10) + 1;
         tetrisDropInterval = Math.max(100, 500 - (tetrisLevel - 1) * 50);
         
@@ -654,7 +710,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
     };
 
     // 11. Menko (Card Flipping - Enhanced)
-    let menkoPlayerCard = { x: 0, y: 0, w: 60, h: 60, vx: 0, vy: 0, active: false, rotation: 0, spin: 0, power: 0, charging: false, powerDir: 1 };
+    let menkoPlayerCard = { x: 0, y: 0, w: 60, h: 60, vx: 0, vy: 0, active: false, rotation: 0, spin: 0, power: 0, charging: false, powerDir: 1, hasImpacted: false };
     let menkoTargets: { x: number, y: number, w: number, h: number, flipped: boolean, angle: number, flipProgress: number, id: number, label: string }[] = [];
     let menkoScore = 0;
     let menkoWind = { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 };
@@ -1147,6 +1203,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
             playTone(150, 'triangle', 0.3);
           }
         }
+      } else if (gameType === 'galaga') {
+        // Handled in draw loop via mouse.clicked for better sync
       } else if (gameType === 'menko') {
         // No click logic needed here, handled in draw loop via mouse.down
       }
@@ -1208,6 +1266,16 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       }
 
       if (gameType === 'brick') {
+        if (bricks.length === 0) initBricks();
+
+        if (hardModeRef.current && balls.length === 1) {
+          balls.push({ x: canvas.width / 2, y: canvas.height - 50, dx: -5, dy: -5, radius: 6 });
+          ballTrails.push([]);
+        } else if (!hardModeRef.current && balls.length > 1) {
+          balls = [balls[0]];
+          ballTrails = [ballTrails[0]];
+        }
+
         paddle.x = mouse.x - paddle.w / 2;
         if (paddle.x < 0) paddle.x = 0;
         if (paddle.x + paddle.w > canvas.width) paddle.x = canvas.width - paddle.w;
@@ -1218,51 +1286,52 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.fillRect(paddle.x, paddle.y, paddle.w, paddle.h);
         ctx.shadowBlur = 0;
 
-        ball.x += ball.dx;
-        ball.y += ball.dy;
+        balls.forEach((ball, bIdx) => {
+          ball.x += ball.dx;
+          ball.y += ball.dy;
 
-        // Ball trail
-        ballTrail.push({ x: ball.x, y: ball.y });
-        if (ballTrail.length > 10) ballTrail.shift();
-        ballTrail.forEach((t, i) => {
+          // Ball trail
+          ballTrails[bIdx].push({ x: ball.x, y: ball.y });
+          if (ballTrails[bIdx].length > 10) ballTrails[bIdx].shift();
+          ballTrails[bIdx].forEach((t, i) => {
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, ball.radius * (i / 10), 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(59, 130, 246, ${i / 20})`; // blue trail
+            ctx.fill();
+          });
+
+          if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
+            ball.dx *= -1;
+            shake(2);
+            playTone(400, 'triangle', 0.05);
+          }
+          if (ball.y - ball.radius < 0) {
+            ball.dy *= -1;
+            shake(2);
+            playTone(400, 'triangle', 0.05);
+          }
+          if (ball.y + ball.radius > canvas.height) {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height - 50;
+            ball.dy = -5;
+            shake(10);
+            playTone(150, 'sawtooth', 0.3);
+          }
+
+          if (ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
+            ball.dy = -Math.abs(ball.dy);
+            ball.dx = ((ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2)) * 6;
+            shake(3);
+            spawnParticles(ball.x, ball.y, '#3b82f6', 5);
+            playTone(600, 'sine', 0.1);
+          }
+
           ctx.beginPath();
-          ctx.arc(t.x, t.y, ball.radius * (i / 10), 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(59, 130, 246, ${i / 20})`; // blue trail
+          ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+          ctx.fillStyle = '#3b82f6'; // blue ball
           ctx.fill();
+          ctx.closePath();
         });
-
-        if (ball.x + ball.radius > canvas.width || ball.x - ball.radius < 0) {
-          ball.dx *= -1;
-          shake(2);
-          playTone(400, 'triangle', 0.05);
-        }
-        if (ball.y - ball.radius < 0) {
-          ball.dy *= -1;
-          shake(2);
-          playTone(400, 'triangle', 0.05);
-        }
-        if (ball.y + ball.radius > canvas.height) {
-          ball.x = canvas.width / 2;
-          ball.y = canvas.height - 50;
-          ball.dy = -5;
-          initBricks();
-          shake(10);
-          playTone(150, 'sawtooth', 0.3);
-        }
-
-        if (ball.y + ball.radius > paddle.y && ball.x > paddle.x && ball.x < paddle.x + paddle.w) {
-          ball.dy = -Math.abs(ball.dy);
-          ball.dx = ((ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2)) * 6;
-          shake(3);
-          spawnParticles(ball.x, ball.y, '#3b82f6', 5);
-          playTone(600, 'sine', 0.1);
-        }
-
-        ctx.beginPath();
-        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#3b82f6'; // blue ball
-        ctx.fill();
-        ctx.closePath();
 
         let activeBricks = 0;
         bricks.forEach(b => {
@@ -1274,18 +1343,41 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.fillRect(b.x, b.y, b.w, b.h);
           ctx.strokeRect(b.x, b.y, b.w, b.h);
 
-          if (ball.x > b.x && ball.x < b.x + b.w && ball.y - ball.radius < b.y + b.h && ball.y + ball.radius > b.y) {
-            b.active = false;
-            ball.dy *= -1;
-            spawnParticles(b.x + b.w / 2, b.y + b.h / 2, '#94a3b8');
-            shake(5);
-            playTone(800, 'sine', 0.1);
-          }
+          balls.forEach(ball => {
+            if (b.active && ball.x > b.x && ball.x < b.x + b.w && ball.y - ball.radius < b.y + b.h && ball.y + ball.radius > b.y) {
+              b.active = false;
+              ball.dy *= -1;
+              spawnParticles(b.x + b.w / 2, b.y + b.h / 2, '#94a3b8');
+              shake(5);
+              playTone(800, 'sine', 0.1);
+            }
+          });
         });
         if (activeBricks === 0) initBricks();
       } else if (gameType === 'galaga') {
-        // Starfield
-        ctx.fillStyle = '#ffffff';
+        if (galagaGameOver) {
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 24px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
+          ctx.font = '14px monospace';
+          ctx.fillText(`SCORE: ${galagaScore} | WAVE: ${galagaWave}`, canvas.width / 2, canvas.height / 2 + 30);
+          ctx.fillText('CLICK TO RESTART', canvas.width / 2, canvas.height / 2 + 60);
+          
+          if (mouse.clicked) {
+            galagaScore = 0;
+            galagaWave = 1;
+            galagaGameOver = false;
+            enemyDir = 0.6; 
+            projectiles = [];
+            enemyProjectiles = [];
+            enemies = []; // Clear enemies array
+            initEnemies();
+            mouse.clicked = false;
+          }
+        } else {
+          // Starfield
+          ctx.fillStyle = '#ffffff';
         stars.forEach(s => {
           s.y += s.speed;
           if (s.y > canvas.height) s.y = 0;
@@ -1303,6 +1395,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.textAlign = 'left';
         ctx.fillText('RIGHTS HOLDER', 20, 30);
         ctx.fillText('DEFEND YOUR IP', 20, 50);
+        ctx.fillText(`SCORE: ${galagaScore}`, 20, 70);
+        ctx.fillText(`WAVE: ${galagaWave}`, 20, 90);
 
         ctx.fillStyle = '#ffffff';
         ctx.shadowBlur = 15;
@@ -1327,6 +1421,20 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           if (p.y < 0) projectiles.splice(i, 1);
         });
 
+        enemyProjectiles.forEach((p, i) => {
+          p.y += p.dy;
+          ctx.fillStyle = '#ef4444';
+          ctx.fillRect(p.x, p.y, p.w, p.h);
+          if (p.y > canvas.height) enemyProjectiles.splice(i, 1);
+          
+          if (p.x < player.x + player.w && p.x + p.w > player.x && p.y < player.y + player.h && p.y + p.h > player.y) {
+            galagaGameOver = true;
+            spawnParticles(player.x + player.w / 2, player.y + player.h / 2, '#ffffff', 30);
+            shake(20);
+            playTone(100, 'sawtooth', 0.5);
+          }
+        });
+
         let hitEdge = false;
         let activeEnemies = 0;
         let anyEnemyOffBottom = false;
@@ -1336,6 +1444,10 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           e.x += enemyDir;
           if (e.x + e.w > canvas.width || e.x < 0) hitEdge = true;
           if (e.y > canvas.height) anyEnemyOffBottom = true;
+
+          if (Math.random() < 0.0005 + (galagaWave * 0.0003)) {
+            enemyProjectiles.push({ x: e.x + e.w / 2 - 2, y: e.y + e.h, w: 4, h: 15, dy: 2.0 + (galagaWave * 0.2) });
+          }
 
           ctx.fillStyle = '#ef4444';
           ctx.beginPath();
@@ -1350,12 +1462,20 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           projectiles.forEach((p, pi) => {
             if (p.x < e.x + e.w && p.x + p.w > e.x && p.y < e.y + e.h && p.y + p.h > e.y) {
               e.active = false;
+              galagaScore += 10;
               projectiles.splice(pi, 1);
               spawnParticles(e.x + e.w / 2, e.y + e.h / 2, '#ef4444', 15);
               shake(8);
               playNoise(0.1, 0.2);
             }
           });
+          
+          if (e.x < player.x + player.w && e.x + e.w > player.x && e.y < player.y + player.h && e.y + e.h > player.y) {
+            galagaGameOver = true;
+            spawnParticles(player.x + player.w / 2, player.y + player.h / 2, '#ffffff', 30);
+            shake(20);
+            playTone(100, 'sawtooth', 0.5);
+          }
         });
 
         if (hitEdge) {
@@ -1363,12 +1483,17 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           enemies.forEach(e => { if (e.active) e.y += 20; });
           playTone(200, 'triangle', 0.1);
         }
-        if (activeEnemies === 0 || anyEnemyOffBottom) {
+        if (activeEnemies === 0) {
+          galagaWave++;
           initEnemies();
           shake(15);
           playTone(150, 'sawtooth', 0.5);
+        } else if (anyEnemyOffBottom) {
+          galagaGameOver = true;
+          shake(20);
+          playTone(100, 'sawtooth', 0.5);
         }
-
+      }
       } else if (gameType === 'zen') {
         const dx = mouse.x - lastMouse.x;
         const dy = mouse.y - lastMouse.y;
@@ -1865,7 +1990,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
 
       } else if (gameType === 'tetris') {
         // Law Stacker (Lego Tetris) - Career Building Edition
-        ctx.fillStyle = '#0f172a'; // dark slate
+        ctx.fillStyle = isDarkModeRef.current ? '#0f172a' : '#f8fafc'; // dark slate or light slate
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
         // Board should be whole width of canvas
@@ -1876,11 +2001,11 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         const offsetY = canvas.height - gridH;
         
         // Draw Grid Background
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+        ctx.fillStyle = isDarkModeRef.current ? 'rgba(15, 23, 42, 0.95)' : 'rgba(248, 250, 252, 0.95)';
         ctx.fillRect(offsetX, offsetY, gridW, gridH);
         
         // Subtle Blueprint Lines
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.05)';
+        ctx.strokeStyle = isDarkModeRef.current ? 'rgba(56, 189, 248, 0.05)' : 'rgba(15, 23, 42, 0.05)';
         ctx.lineWidth = 1;
         for (let i = 0; i <= tetrisCols; i++) {
           ctx.beginPath(); ctx.moveTo(offsetX + i * blockSize, offsetY); ctx.lineTo(offsetX + i * blockSize, offsetY + gridH); ctx.stroke();
@@ -2011,17 +2136,18 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.font = 'bold 10px monospace';
         ctx.textAlign = 'right';
         
-        ctx.fillStyle = 'rgba(56, 189, 248, 0.3)';
+        ctx.fillStyle = isDarkModeRef.current ? 'rgba(56, 189, 248, 0.3)' : 'rgba(15, 23, 42, 0.1)';
         ctx.beginPath();
-        ctx.roundRect(statsX - 110, statsY, 110, 60, 8);
+        ctx.roundRect(statsX - 110, statsY, 110, 80, 8);
         ctx.fill();
         
-        ctx.fillStyle = '#38bdf8';
+        ctx.fillStyle = isDarkModeRef.current ? '#38bdf8' : '#0f172a';
         ctx.fillText('CAREER PROGRESS', statsX - 5, statsY + 15);
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = isDarkModeRef.current ? '#ffffff' : '#000000';
         ctx.fillText(`EXP: ${tetrisScore}`, statsX - 5, statsY + 30);
-        ctx.fillText(`RANK: ${tetrisLevel}`, statsX - 5, statsY + 45);
-        ctx.fillText(`GOALS: ${tetrisLines}`, statsX - 5, statsY + 55);
+        ctx.fillText(`HI: ${tetrisHighScore}`, statsX - 5, statsY + 45);
+        ctx.fillText(`RANK: ${tetrisLevel}`, statsX - 5, statsY + 60);
+        ctx.fillText(`GOALS: ${tetrisLines}`, statsX - 5, statsY + 75);
         ctx.textAlign = 'left';
 
         // Update & Draw Current Block
@@ -2080,25 +2206,25 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
         ctx.restore();
 
         if (tetrisGameOver) {
-          ctx.fillStyle = 'rgba(0,0,0,0.7)';
+          ctx.fillStyle = isDarkModeRef.current ? 'rgba(0,0,0,0.7)' : 'rgba(255,255,255,0.7)';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.fillStyle = '#ef4444';
           ctx.font = 'bold 30px sans-serif';
           ctx.textAlign = 'center';
           ctx.fillText('GAME OVER', canvas.width / 2, canvas.height / 2);
-          ctx.fillStyle = '#ffffff';
+          ctx.fillStyle = isDarkModeRef.current ? '#ffffff' : '#000000';
           ctx.font = '16px sans-serif';
           ctx.fillText('Click to Restart', canvas.width / 2, canvas.height / 2 + 40);
         }
 
         if (tetrisFactTimer > 0) {
           tetrisFactTimer--;
-          ctx.fillStyle = `rgba(15, 23, 42, ${Math.min(1, tetrisFactTimer / 30)})`;
+          ctx.fillStyle = isDarkModeRef.current ? `rgba(15, 23, 42, ${Math.min(1, tetrisFactTimer / 30)})` : `rgba(241, 245, 249, ${Math.min(1, tetrisFactTimer / 30)})`;
           ctx.fillRect(20, canvas.height - 100, canvas.width - 40, 80);
-          ctx.strokeStyle = `rgba(56, 189, 248, ${Math.min(1, tetrisFactTimer / 30)})`;
+          ctx.strokeStyle = isDarkModeRef.current ? `rgba(56, 189, 248, ${Math.min(1, tetrisFactTimer / 30)})` : `rgba(15, 23, 42, ${Math.min(1, tetrisFactTimer / 30)})`;
           ctx.strokeRect(20, canvas.height - 100, canvas.width - 40, 80);
           
-          ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, tetrisFactTimer / 30)})`;
+          ctx.fillStyle = isDarkModeRef.current ? `rgba(255, 255, 255, ${Math.min(1, tetrisFactTimer / 30)})` : `rgba(0, 0, 0, ${Math.min(1, tetrisFactTimer / 30)})`;
           ctx.font = 'bold 12px sans-serif';
           ctx.textAlign = 'center';
           ctx.fillText('LEGAL FACT:', canvas.width / 2, canvas.height - 75);
@@ -2465,7 +2591,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
               spin: (Math.random() - 0.5) * 0.8,
               power: menkoPlayerCard.power,
               charging: false,
-              powerDir: 1
+              powerDir: 1,
+              hasImpacted: false
             };
             menkoThrowsLeft--;
             shake(5);
@@ -2569,7 +2696,8 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
           ctx.restore();
 
           // Collision / Wind effect on impact
-          if (menkoPlayerCard.y > canvas.height - 20 && menkoPlayerCard.vy > 0) {
+          if (menkoPlayerCard.y > canvas.height - 20 && menkoPlayerCard.vy > 0 && !menkoPlayerCard.hasImpacted) {
+            menkoPlayerCard.hasImpacted = true;
             shake(menkoPlayerCard.power / 2);
             playNoise(0.2, 0.3);
             
@@ -3053,6 +3181,7 @@ export function useCanvasGame(gameType: GameType, isPlaying: boolean, soundEnabl
       }
 
       ctx.restore();
+      mouse.clicked = false;
       animationFrameId = requestAnimationFrame(draw);
     };
 

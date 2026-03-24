@@ -168,7 +168,8 @@ export default function LegalInsights({ isDarkMode, globalMute }: LegalInsightsP
                   <div 
                     key={file.id}
                     ref={(el) => (caseFileRefs.current[file.id] = el)}
-                    className={`p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden ${
+                    onClick={() => toggleBrief(file.id)}
+                    className={`p-5 rounded-2xl border transition-all duration-300 relative overflow-hidden cursor-pointer ${
                       expandedBrief === file.id 
                         ? 'bg-white/10 border-cyan-500/50 shadow-[inset_4px_0_0_rgba(34,211,238,1)]' 
                         : 'bg-white/5 border-white/10 hover:border-white/20 hover:shadow-[inset_4px_0_0_rgba(34,211,238,0.5)]'
@@ -196,10 +197,9 @@ export default function LegalInsights({ isDarkMode, globalMute }: LegalInsightsP
                       {file.subtitle}
                     </p>
 
-                    <button 
-                      onClick={() => toggleBrief(file.id)}
+                    <div 
                       className={`flex items-center justify-between w-full mt-4 pt-4 border-t border-white/5 group/btn transition-colors ${
-                        expandedBrief === file.id ? 'text-cyan-400' : 'text-white/40 hover:text-white'
+                        expandedBrief === file.id ? 'text-cyan-400' : 'text-white/40 group-hover:text-white'
                       }`}
                     >
                       <span className="text-[10px] font-mono font-bold uppercase tracking-[0.2em]">
@@ -210,7 +210,7 @@ export default function LegalInsights({ isDarkMode, globalMute }: LegalInsightsP
                       }`}>
                         <ChevronRight size={12} className={expandedBrief === file.id ? 'rotate-90' : ''} />
                       </div>
-                    </button>
+                    </div>
 
                     <AnimatePresence>
                       {expandedBrief === file.id && (
@@ -290,7 +290,8 @@ export default function LegalInsights({ isDarkMode, globalMute }: LegalInsightsP
                     <div 
                       key={index} 
                       ref={(el) => (strategyItemRefs.current[index] = el)}
-                      className={`rounded-2xl border transition-all duration-300 relative ${
+                      onClick={() => toggleDossier(index)}
+                      className={`rounded-2xl border transition-all duration-300 relative cursor-pointer ${
                         isExpanded 
                           ? 'bg-white/10 border-cyan-500/50 shadow-[inset_4px_0_0_rgba(34,211,238,1)]' 
                           : 'bg-white/5 border-white/10 hover:border-white/20 hover:shadow-[inset_4px_0_0_rgba(34,211,238,0.5)]'
@@ -331,8 +332,7 @@ export default function LegalInsights({ isDarkMode, globalMute }: LegalInsightsP
                         )}
                       </AnimatePresence>
 
-                      <button 
-                        onClick={() => toggleDossier(index)}
+                      <div 
                         className={`w-full flex items-center justify-between p-5 text-left group/item ${isExpanded && isMiddle ? 'border-t border-cyan-500/20 mt-2' : ''}`}
                       >
                         <div className="flex items-center gap-4">
@@ -357,7 +357,7 @@ export default function LegalInsights({ isDarkMode, globalMute }: LegalInsightsP
                         }`}>
                           <ChevronRight size={14} className={`transition-transform duration-300 ${isExpanded ? (isMiddle ? '-rotate-90' : 'rotate-90') : ''}`} />
                         </div>
-                      </button>
+                      </div>
                       
                       {/* Expanded Content for Normal Items (Expands BELOW) */}
                       <AnimatePresence>

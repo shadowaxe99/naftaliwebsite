@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useScroll, useSpring } from 'motion/react';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'motion/react';
 import { 
   BookOpen, Briefcase, GraduationCap, Mail, MapPin, Phone, Globe, 
   Mic, PenTool, ChevronRight, Command, Search, Gamepad2,
@@ -20,17 +20,54 @@ interface PortfolioProps {
   setGlobalMute: (mute: boolean) => void;
   cursorType: 'anime' | 'mecha' | 'default';
   setCursorType: (type: 'anime' | 'mecha' | 'default') => void;
+  onEngageChange?: (isEngaging: boolean) => void;
 }
 
-export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlobalMute, cursorType, setCursorType }: PortfolioProps) {
+export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlobalMute, cursorType, setCursorType, onEngageChange }: PortfolioProps) {
   const [cmdOpen, setCmdOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [resumeOpen, setResumeOpen] = useState(false);
   const [expandedInsightId, setExpandedInsightId] = useState<string | null>(null);
   const [isBookExpanded, setIsBookExpanded] = useState(false);
   const [isGlobalSoundOn, setIsGlobalSoundOn] = useState(true);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isCanvasInView, setIsCanvasInView] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const bookSectionRef = useRef<HTMLDivElement>(null);
+  const canvasSectionRef = useRef<HTMLDivElement>(null);
+
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isEngaging, setIsEngaging] = useState(false);
+
+  useEffect(() => {
+    if (onEngageChange) {
+      onEngageChange(isEngaging);
+    }
+  }, [isEngaging, onEngageChange]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 500);
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsCanvasInView(entry.isIntersecting);
+      },
+      { threshold: 0.1 }
+    );
+
+    if (canvasSectionRef.current) {
+      observer.observe(canvasSectionRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
 
   const toggleBookSynopsis = () => {
     const newState = !isBookExpanded;
@@ -43,12 +80,16 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
   };
 
   // Scroll Progress
-  const { scrollYProgress } = useScroll();
+  const { scrollYProgress, scrollY } = useScroll();
+  const smoothScrollY = useSpring(scrollY, { stiffness: 20, damping: 25, restDelta: 0.001 });
   const scaleX = useSpring(scrollYProgress, {
     stiffness: 100,
     damping: 30,
     restDelta: 0.001
   });
+
+  const heroY1 = useTransform(smoothScrollY, [0, 1000], [0, 200]);
+  const heroY2 = useTransform(smoothScrollY, [0, 1000], [0, -150]);
 
   // Cmd+K Listener
   useEffect(() => {
@@ -126,7 +167,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
       />
 
       {/* Navigation */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${isDarkMode ? 'bg-neutral-950/80' : 'bg-paper/80'} backdrop-blur-xl border-b ${isDarkMode ? 'border-neutral-800' : 'border-neutral-200'}`}>
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-500 ${isScrolled ? (isDarkMode ? 'bg-neutral-950/80 backdrop-blur-xl border-b border-neutral-800 shadow-lg shadow-black/20' : 'bg-paper/80 backdrop-blur-xl border-b border-neutral-200 shadow-sm') : 'bg-transparent border-transparent py-2'}`}>
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <motion.div 
             initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
@@ -211,8 +252,8 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
             <motion.div 
               variants={float}
               animate="animate"
+              style={{ y: heroY1, fontFamily: '"Noto Serif JP", serif' }}
               className={`absolute top-10 right-4 text-[12vw] font-bold pointer-events-none select-none z-0 transition-colors duration-700 ${isDarkMode ? 'text-white/[0.15]' : 'text-neutral-900/[0.1]'}`}
-              style={{ fontFamily: '"Noto Serif JP", serif' }}
             >
               <motion.span variants={shimmer} animate="animate">ネイサン</motion.span>
             </motion.div>
@@ -221,8 +262,8 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
             <motion.div 
               variants={float}
               animate="animate"
+              style={{ y: heroY2, fontFamily: '"Noto Serif JP", serif' }}
               className={`absolute bottom-10 left-4 text-[6vw] font-bold pointer-events-none select-none z-0 transition-colors duration-700 ${isDarkMode ? 'text-white/[0.12]' : 'text-neutral-900/[0.08]'}`}
-              style={{ fontFamily: '"Noto Serif JP", serif' }}
             >
               <motion.span variants={shimmer} animate="animate">著作権・商標法</motion.span>
             </motion.div>
@@ -248,24 +289,28 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
               <motion.div variants={fadeIn} className="flex flex-wrap gap-6">
                 <a 
                   href="#contact" 
-                  className="px-8 py-4 bg-blue-600/20 backdrop-blur-md border border-blue-500/30 hover:bg-blue-600/30 text-white rounded-2xl font-bold text-sm transition-all shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95"
+                  className={`relative overflow-hidden group px-8 py-4 ${isDarkMode ? 'bg-blue-600/20 border-blue-500/30 text-white' : 'bg-blue-600 border-blue-700 text-white'} backdrop-blur-md border rounded-2xl font-bold text-sm transition-all shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95`}
                 >
-                  Get in Touch
+                  <span className="relative z-10">Get in Touch</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </a>
                 <button 
                   onClick={() => setResumeOpen(true)}
-                  className={`px-8 py-4 ${isDarkMode ? 'bg-white/5 backdrop-blur-md border-white/10 hover:bg-white/10 text-white' : 'bg-black/5 backdrop-blur-md border-black/10 hover:bg-black/10 text-neutral-900'} border rounded-2xl font-bold text-sm transition-all hover:scale-105 active:scale-95 flex items-center gap-2`}
+                  className={`relative overflow-hidden group px-8 py-4 ${isDarkMode ? 'bg-white/5 backdrop-blur-md border-white/10 text-white' : 'bg-black/5 backdrop-blur-md border-black/10 text-neutral-900'} border rounded-2xl font-bold text-sm transition-all hover:scale-105 active:scale-95 flex items-center gap-2`}
                 >
-                  <Download size={18} />
-                  View Resume
+                  <span className="relative z-10 flex items-center gap-2">
+                    <Download size={18} className="transition-transform group-hover:-translate-y-1 group-hover:translate-x-1" />
+                    View Resume
+                  </span>
+                  <div className={`absolute inset-0 ${isDarkMode ? 'bg-white/10' : 'bg-black/10'} opacity-0 group-hover:opacity-100 transition-opacity duration-300`} />
                 </button>
               </motion.div>
             </motion.div>
 
-            {/* Hero Stats/Badges */}
+            {/* Hero Stats/Badges - Moved left */}
             <motion.div 
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1, duration: 1 }}
-              className="absolute bottom-10 right-0 hidden lg:flex gap-12"
+              className="absolute bottom-10 right-20 hidden lg:flex gap-12"
             >
               <div className="text-right">
                 <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Current Focus</p>
@@ -280,27 +325,31 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
         </div>
 
         {/* Rolling Expertise Marquee - Full Bleed */}
-        <div className={`py-6 border-y ${isDarkMode ? 'border-neutral-800 bg-neutral-900/10' : 'border-neutral-200 bg-paper/30'} overflow-hidden relative z-10 w-full`}>
-          <div className="flex animate-marquee whitespace-nowrap">
-            {[...Array(2)].map((_, i) => (
+        <div className={`py-6 border-y ${isDarkMode ? 'border-neutral-800 bg-neutral-900/10' : 'border-neutral-200 bg-paper/30'} overflow-hidden relative z-10 w-full group`}>
+          {/* Edge Fade Masks */}
+          <div className={`absolute inset-y-0 left-0 w-32 bg-gradient-to-r ${isDarkMode ? 'from-neutral-950' : 'from-paper'} to-transparent z-20 pointer-events-none`} />
+          <div className={`absolute inset-y-0 right-0 w-32 bg-gradient-to-l ${isDarkMode ? 'from-neutral-950' : 'from-paper'} to-transparent z-20 pointer-events-none`} />
+          
+          <div className="flex animate-marquee whitespace-nowrap group-hover:[animation-play-state:paused] transition-all duration-500">
+            {[...Array(4)].map((_, i) => (
               <div key={i} className="flex items-center gap-10 px-6">
-                <span className="text-lg md:text-xl font-serif italic text-neutral-500">Intellectual Property</span>
+                <span className="text-lg md:text-xl font-serif italic text-neutral-500 hover:text-blue-500 transition-colors cursor-default">Intellectual Property</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
-                <span className="text-lg md:text-xl font-serif italic text-neutral-500">Copyright Law</span>
+                <span className="text-lg md:text-xl font-serif italic text-neutral-500 hover:text-blue-500 transition-colors cursor-default">Copyright Law</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
-                <span className="text-lg md:text-xl font-serif italic text-neutral-500">Trademark Strategy</span>
+                <span className="text-lg md:text-xl font-serif italic text-neutral-500 hover:text-blue-500 transition-colors cursor-default">Trademark Strategy</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
-                <span className="text-lg md:text-xl font-serif italic text-neutral-500">Entertainment Law</span>
+                <span className="text-lg md:text-xl font-serif italic text-neutral-500 hover:text-blue-500 transition-colors cursor-default">Entertainment Law</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
-                <span className="text-lg md:text-xl font-serif italic text-neutral-500">Creative Advocacy</span>
+                <span className="text-lg md:text-xl font-serif italic text-neutral-500 hover:text-blue-500 transition-colors cursor-default">Creative Advocacy</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
-                <span className="text-lg md:text-xl font-serif italic text-neutral-500">Digital Rights</span>
+                <span className="text-lg md:text-xl font-serif italic text-neutral-500 hover:text-blue-500 transition-colors cursor-default">Digital Rights</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
-                <span className="text-lg md:text-xl font-serif italic text-neutral-500">Japanese Made</span>
+                <span className="text-lg md:text-xl font-serif italic text-neutral-500 hover:text-blue-500 transition-colors cursor-default">Japanese Made</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
-                <span className="text-lg md:text-xl font-serif italic text-neutral-500">Legal Architecture</span>
+                <span className="text-lg md:text-xl font-serif italic text-neutral-500 hover:text-blue-500 transition-colors cursor-default">Legal Architecture</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
-                <span className="text-lg md:text-xl font-serif italic text-neutral-500">Narrative Strategy</span>
+                <span className="text-lg md:text-xl font-serif italic text-neutral-500 hover:text-blue-500 transition-colors cursor-default">Narrative Strategy</span>
                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500/40" />
               </div>
             ))}
@@ -384,36 +433,65 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
           {/* Legal Philosophy Section */}
           <motion.section 
             className="py-20 border-y border-neutral-800/10"
-            initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ duration: 1 }}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true, margin: "-100px" }}
+            variants={{
+              initial: { opacity: 0 },
+              animate: {
+                opacity: 1,
+                transition: {
+                  staggerChildren: 0.2
+                }
+              }
+            }}
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div className="space-y-4">
-                <div className="w-8 h-8 bg-blue-500/10 rounded-lg flex items-center justify-center">
-                  <span className="text-blue-500 font-serif font-bold text-sm">01</span>
-                </div>
-                <h3 className={`text-xl font-serif font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Creative Advocacy</h3>
-                <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                  Empowering creators by providing robust legal frameworks that protect their intellectual property without stifling innovation.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div className="w-8 h-8 bg-emerald-500/10 rounded-lg flex items-center justify-center">
-                  <span className="text-emerald-500 font-serif font-bold text-sm">02</span>
-                </div>
-                <h3 className={`text-xl font-serif font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Digital Rights</h3>
-                <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                  Navigating the complexities of digital distribution, AI training data, and the evolving landscape of online rights management.
-                </p>
-              </div>
-              <div className="space-y-4">
-                <div className="w-8 h-8 bg-amber-500/10 rounded-lg flex items-center justify-center">
-                  <span className="text-amber-500 font-serif font-bold text-sm">03</span>
-                </div>
-                <h3 className={`text-xl font-serif font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>Narrative Strategy</h3>
-                <p className={`text-sm leading-relaxed ${isDarkMode ? 'text-neutral-400' : 'text-neutral-500'}`}>
-                  Applying storytelling principles to legal advocacy, ensuring that every case and contract tells a clear, compelling story.
-                </p>
-              </div>
+              {[
+                {
+                  id: '01',
+                  title: 'Creative Advocacy',
+                  color: 'blue',
+                  desc: 'Empowering creators by providing robust legal frameworks that protect their intellectual property without stifling innovation.'
+                },
+                {
+                  id: '02',
+                  title: 'Digital Rights',
+                  color: 'emerald',
+                  desc: 'Navigating the complexities of digital distribution, AI training data, and the evolving landscape of online rights management.'
+                },
+                {
+                  id: '03',
+                  title: 'Narrative Strategy',
+                  color: 'amber',
+                  desc: 'Applying storytelling principles to legal advocacy, ensuring that every case and contract tells a clear, compelling story.'
+                }
+              ].map((item) => (
+                <motion.div 
+                  key={item.id}
+                  variants={{
+                    initial: { opacity: 0, y: 20 },
+                    animate: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] } }
+                  }}
+                  className={`group p-6 rounded-3xl transition-all duration-500 hover:-translate-y-2 ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-black/5'}`}
+                >
+                  <div className="space-y-4 relative">
+                    {/* Vertical Dimension Line Accent */}
+                    <div className={`absolute -left-6 top-0 bottom-0 w-px scale-y-0 group-hover:scale-y-100 transition-transform duration-500 origin-top ${item.color === 'blue' ? 'bg-blue-500' : item.color === 'emerald' ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    
+                    <motion.div 
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      className={`w-10 h-10 ${item.color === 'blue' ? 'bg-blue-500/10' : item.color === 'emerald' ? 'bg-emerald-500/10' : 'bg-amber-500/10'} rounded-xl flex items-center justify-center transition-colors duration-500 group-hover:shadow-lg`}
+                    >
+                      <span className={`font-serif font-bold text-sm ${item.color === 'blue' ? 'text-blue-500' : item.color === 'emerald' ? 'text-emerald-500' : 'text-amber-500'}`}>{item.id}</span>
+                    </motion.div>
+                    <h3 className={`text-xl font-serif font-medium transition-colors duration-300 ${isDarkMode ? 'text-white group-hover:text-blue-400' : 'text-neutral-900 group-hover:text-blue-600'}`}>{item.title}</h3>
+                    <p className={`text-sm leading-relaxed transition-opacity duration-300 ${isDarkMode ? 'text-neutral-400 group-hover:text-neutral-300' : 'text-neutral-500 group-hover:text-neutral-700'}`}>
+                      {item.desc}
+                    </p>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </motion.section>
 
@@ -432,7 +510,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
               </div>
             </div>
 
-            <CareerArchitecture isDarkMode={isDarkMode} />
+            <CareerArchitecture isDarkMode={isDarkMode} globalMute={globalMute} />
           </motion.section>
 
           {/* Legal Insights Section */}
@@ -552,7 +630,7 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
               </div>
 
               {/* Arcade Card */}
-              <div id="canvas" className="col-span-1 md:col-span-2 mt-8">
+              <div id="canvas" ref={canvasSectionRef} className={`col-span-1 md:col-span-2 mt-8 transition-all duration-500 ${isEngaging ? 'relative z-[70]' : 'relative z-10'}`}>
                 <div className="flex items-center justify-between mb-6">
                   <div>
                     <h3 className="text-2xl font-serif font-medium mb-1">Interactive Playground</h3>
@@ -563,7 +641,35 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
                     <span className={`px-3 py-1 ${isDarkMode ? 'bg-neutral-800 text-neutral-400' : 'bg-neutral-100 text-neutral-500'} text-xs font-mono rounded-full`}>Canvas API</span>
                   </div>
                 </div>
-                <ArcadeCard isDarkMode={isDarkMode} />
+                <ArcadeCard isDarkMode={isDarkMode} onPlayChange={setIsEngaging} isEngaging={isEngaging} globalMute={globalMute} />
+
+      {/* Game Mode Overlay / Shade */}
+      <AnimatePresence>
+        {isEngaging && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center pointer-events-none"
+          >
+            {/* Exit Button - repositioned to top right */}
+            <motion.div
+              initial={{ y: -20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -20, opacity: 0 }}
+              className="absolute top-8 right-8 z-10 pointer-events-auto"
+            >
+              <button 
+                onClick={() => setIsEngaging(false)}
+                className={`px-6 py-2.5 rounded-full font-bold text-[9px] uppercase tracking-[0.3em] shadow-2xl border transition-all flex items-center gap-3 group ${isDarkMode ? 'bg-white text-black border-white/20 hover:bg-neutral-200' : 'bg-black text-white border-black/20 hover:bg-neutral-800'}`}
+              >
+                <ChevronRight size={12} className="rotate-180 group-hover:-translate-x-1 transition-transform" />
+                Back to Portfolio
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
               </div>
             </div>
           </motion.section>
@@ -636,6 +742,22 @@ export default function Portfolio({ isDarkMode, toggleTheme, globalMute, setGlob
         <p className="mt-2 text-xs font-mono">J.D. Candidate &middot; Author &middot; Creative Consultant</p>
       </footer>
       <Analytics />
+      {/* Back to Top Button */}
+      <AnimatePresence>
+        {showBackToTop && !isEngaging && !isCanvasInView && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className={`fixed bottom-8 right-8 p-4 rounded-full shadow-2xl z-40 backdrop-blur-md border transition-all duration-300 hover:-translate-y-1 ${isDarkMode ? 'bg-blue-600/80 border-blue-400/50 text-white hover:bg-blue-500' : 'bg-blue-600 border-blue-700 text-white hover:bg-blue-700'}`}
+            title="Back to Top"
+          >
+            <ChevronRight size={24} className="-rotate-90" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       <ResumeModal isOpen={resumeOpen} onClose={() => setResumeOpen(false)} isDarkMode={isDarkMode} globalMute={globalMute} />
     </div>
   );

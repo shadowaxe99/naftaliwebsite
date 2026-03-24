@@ -49,6 +49,8 @@ export default function App() {
   const [cursorType, setCursorType] = useState<'anime' | 'mecha' | 'default'>('anime');
   const [path, setPath] = useState(window.location.pathname);
 
+  const [isEngaging, setIsEngaging] = useState(false);
+
   // Hidden lock logic
   const lockClickCount = useRef(0);
   const lastClickTime = useRef(0);
@@ -62,7 +64,7 @@ export default function App() {
     }
     lastClickTime.current = now;
 
-    if (lockClickCount.current >= 4) {
+    if (lockClickCount.current >= 6) {
       if (isLocked) {
         setIsLocked(false);
       } else {
@@ -101,15 +103,21 @@ export default function App() {
   }, [cursorType]);
 
   // Hidden Lock Icon Component
-  const HiddenLock = () => (
-    <button 
-      onClick={handleHiddenLockClick}
-      className={`fixed bottom-4 left-4 p-2 rounded-full opacity-5 hover:opacity-20 transition-opacity z-[9999] ${isDarkMode ? 'text-white' : 'text-black'}`}
-      title="Test Lock"
-    >
-      <Lock size={12} />
-    </button>
-  );
+  const HiddenLock = ({ forceDarkText = false, noHover = false }: { forceDarkText?: boolean, noHover?: boolean }) => {
+    if (isEngaging) return null;
+    const useDarkText = forceDarkText || !isDarkMode;
+    return (
+      <div className="fixed bottom-0 left-0 p-6 z-[9999] group">
+        <button 
+          onClick={handleHiddenLockClick}
+          className={`p-3 rounded-full transition-all duration-300 ${noHover ? 'opacity-[0.12]' : 'opacity-[0.02] group-hover:opacity-25'} ${!useDarkText ? 'text-white bg-white/10' : 'text-black bg-black/10'} ${!noHover ? (!useDarkText ? 'group-hover:bg-white/20' : 'group-hover:bg-black/20') : ''}`}
+          title="System Access"
+        >
+          <Lock size={16} />
+        </button>
+      </div>
+    );
+  };
 
   // 1. If not authenticated, always show 404 facade unless "unlocked" to the password screen
   if (!isAuthenticated) {
@@ -117,7 +125,7 @@ export default function App() {
       return (
         <>
           <NotFound showButton={false} />
-          <HiddenLock />
+          <HiddenLock forceDarkText={true} noHover={true} />
         </>
       );
     }
@@ -136,7 +144,7 @@ export default function App() {
     return (
       <>
         <NotFound showButton={true} />
-        <HiddenLock />
+        <HiddenLock forceDarkText={true} noHover={true} />
       </>
     );
   }
@@ -157,6 +165,7 @@ export default function App() {
           setGlobalMute={setGlobalMute}
           cursorType={cursorType}
           setCursorType={setCursorType}
+          onEngageChange={setIsEngaging}
         />
       </Suspense>
 

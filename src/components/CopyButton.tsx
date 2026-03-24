@@ -21,9 +21,10 @@ export default function CopyButton({ text, label, icon: Icon, isDarkMode }: Copy
   return (
     <button 
       onClick={handleCopy} 
-      className={`group flex items-center justify-between w-full p-4 ${isDarkMode ? 'bg-neutral-800 border-neutral-700 hover:border-neutral-600' : 'bg-white border-neutral-200 hover:border-neutral-300'} rounded-2xl hover:shadow-sm transition-all text-left border`}
+      className={`group flex items-center justify-between w-full p-4 ${isDarkMode ? 'bg-neutral-800 border-neutral-700 hover:border-neutral-600' : 'bg-white border-neutral-200 hover:border-neutral-300'} rounded-2xl hover:shadow-sm transition-all text-left border relative overflow-hidden`}
     >
-      <div className="flex items-center gap-4">
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none" />
+      <div className="flex items-center gap-4 relative z-10">
         <div className={`w-10 h-10 ${isDarkMode ? 'bg-neutral-700 text-white' : 'bg-neutral-50 text-neutral-900'} rounded-full flex items-center justify-center ${isDarkMode ? 'group-hover:bg-neutral-600' : 'group-hover:bg-neutral-100'} transition-colors`}>
           <Icon size={18} />
         </div>
@@ -32,7 +33,7 @@ export default function CopyButton({ text, label, icon: Icon, isDarkMode }: Copy
           <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-neutral-900'}`}>{text}</p>
         </div>
       </div>
-      <div className={`${isDarkMode ? 'text-neutral-500 group-hover:text-neutral-300' : 'text-neutral-400 group-hover:text-neutral-900'} transition-colors`}>
+      <div className={`relative z-10 ${isDarkMode ? 'text-neutral-500 group-hover:text-neutral-300' : 'text-neutral-400 group-hover:text-neutral-900'} transition-colors`}>
         {copied ? <Check size={18} className="text-emerald-500" /> : <Copy size={18} />}
       </div>
     </button>

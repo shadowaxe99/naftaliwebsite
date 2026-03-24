@@ -3,14 +3,32 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Play, Square, Info, Volume2, VolumeX, ChevronDown } from 'lucide-react';
 import { useCanvasGame, GameType } from '../hooks/useCanvasGame';
 
-export default function ArcadeCard() {
+export default function ArcadeCard({ isDarkMode = true, onPlayChange, isEngaging = false, globalMute = false }: { isDarkMode?: boolean, onPlayChange?: (isPlaying: boolean) => void, isEngaging?: boolean, globalMute?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [gameType, setGameType] = useState<GameType>('brick');
   const [showCardGames, setShowCardGames] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const canvasRef = useCanvasGame(gameType, isPlaying, soundEnabled && isVisible);
+  const [hardMode, setHardMode] = useState(false);
+
+  const canvasRef = useCanvasGame(gameType, isPlaying, soundEnabled && isVisible, isDarkMode, hardMode);
+
+  const prevEngaging = useRef(isEngaging);
+
+  useEffect(() => {
+    if (onPlayChange) {
+      onPlayChange(isPlaying);
+    }
+  }, [isPlaying, onPlayChange]);
+
+  useEffect(() => {
+    // Only shut off if we were engaged and now we're not (user clicked Back to Portfolio)
+    if (prevEngaging.current && !isEngaging && isPlaying) {
+      setIsPlaying(false);
+    }
+    prevEngaging.current = isEngaging;
+  }, [isEngaging, isPlaying]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -94,7 +112,7 @@ export default function ArcadeCard() {
     }
   };
 
-  const [isZenInstructionsMinimized, setIsZenInstructionsMinimized] = useState(false);
+  const [isZenInstructionsMinimized, setIsZenInstructionsMinimized] = useState(true);
 
   return (
     <>
@@ -218,6 +236,15 @@ export default function ArcadeCard() {
             </div>
 
             <div className="flex items-center gap-2 px-4 border-l border-white/10 bg-black/40 h-full py-3">
+              {gameType === 'brick' && (
+                <button
+                  onClick={() => setHardMode(!hardMode)}
+                  className={`flex-shrink-0 px-3 h-9 rounded-full transition-all flex items-center justify-center text-[10px] font-bold tracking-widest uppercase ${hardMode ? 'bg-red-500 text-white shadow-[0_0_15px_rgba(239,68,68,0.4)]' : 'bg-white/10 text-white hover:bg-white/20'}`}
+                  title={hardMode ? "Hard Mode On" : "Hard Mode Off"}
+                >
+                  {hardMode ? 'Hard' : 'Easy'}
+                </button>
+              )}
               <button 
                 onClick={() => setSoundEnabled(!soundEnabled)}
                 className={`flex-shrink-0 w-9 h-9 rounded-full transition-all flex items-center justify-center ${soundEnabled ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.4)]' : 'bg-white/10 text-white hover:bg-white/20'}`}
