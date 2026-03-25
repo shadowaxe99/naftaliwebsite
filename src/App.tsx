@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'motion/react';
+import { motion, useTransform, useSpring, useMotionValue } from 'motion/react';
 import { Scale, BookOpen, GraduationCap, ArrowRight } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 
@@ -34,10 +34,6 @@ export default function App() {
     };
   }, [isMobile, mouseX, mouseY]);
 
-  const { scrollYProgress } = useScroll();
-  const opacity = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
-  const scale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
-
   const springConfig = { damping: 25, stiffness: 150 };
   const cursorX = useSpring(mouseX, springConfig);
   const cursorY = useSpring(mouseY, springConfig);
@@ -57,21 +53,34 @@ export default function App() {
 
   const floatingVariants = {
     float: (i: number) => ({
-      y: [0, -12, 0],
-      rotate: [0, i % 2 === 0 ? 3 : -3, 0],
+      y: [0, -16, 0],
+      rotate: [i % 2 === 0 ? -2 : 2, i % 2 === 0 ? 3 : -3, i % 2 === 0 ? -2 : 2],
+      scale: [1, 1.03, 1],
       transition: {
-        duration: 5 + i,
+        duration: 4 + (i * 0.5),
         repeat: Infinity,
         ease: "easeInOut",
-        delay: i * 0.4,
+        delay: i * 0.2,
       },
     }),
   };
 
   const roles = useMemo(() => [
-    { icon: <Scale className="w-4 h-4" />, label: "Future Attorney", color: "bg-emerald-50 text-emerald-900 border-emerald-100" },
-    { icon: <BookOpen className="w-4 h-4" />, label: "Novelist", color: "bg-amber-50 text-amber-900 border-amber-100" },
-    { icon: <GraduationCap className="w-4 h-4" />, label: "Educator", color: "bg-blue-50 text-blue-900 border-blue-100" },
+    { 
+      icon: <Scale className="w-4 h-4 drop-shadow-sm" />, 
+      label: "Future Attorney", 
+      color: "bg-gradient-to-b from-emerald-100 to-emerald-50 border-emerald-200/60 shadow-[0_12px_24px_-8px_rgba(16,185,129,0.5),inset_0_2px_4px_rgba(255,255,255,0.9)] text-emerald-900" 
+    },
+    { 
+      icon: <BookOpen className="w-4 h-4 drop-shadow-sm" />, 
+      label: "Novelist", 
+      color: "bg-gradient-to-b from-amber-100 to-amber-50 border-amber-200/60 shadow-[0_12px_24px_-8px_rgba(245,158,11,0.5),inset_0_2px_4px_rgba(255,255,255,0.9)] text-amber-900" 
+    },
+    { 
+      icon: <GraduationCap className="w-4 h-4 drop-shadow-sm" />, 
+      label: "Educator", 
+      color: "bg-gradient-to-b from-blue-100 to-blue-50 border-blue-200/60 shadow-[0_12px_24px_-8px_rgba(59,130,246,0.5),inset_0_2px_4px_rgba(255,255,255,0.9)] text-blue-900" 
+    },
   ], []);
 
   return (
@@ -113,21 +122,21 @@ export default function App() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        style={{ opacity, scale }}
         className="w-full max-w-6xl text-center relative z-10 flex flex-col items-center"
       >
-        {/* Animated Role Badges */}
-        <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-3 md:gap-5 mb-12 md:mb-20">
+        {/* 3D Animated Role Badges */}
+        <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-4 md:gap-6 mb-12 md:mb-20">
           {roles.map((role, i) => (
             <motion.div
               key={role.label}
               custom={i}
               variants={floatingVariants}
               animate="float"
-              className={`flex items-center gap-2.5 px-6 py-3 rounded-full border shadow-sm backdrop-blur-xl transition-all duration-500 hover:scale-105 ${role.color}`}
+              whileHover={{ scale: 1.1, y: -5 }}
+              className={`flex items-center gap-2.5 px-6 py-3 rounded-full border backdrop-blur-xl transition-all duration-300 cursor-default ${role.color}`}
             >
               {role.icon}
-              <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-bold">{role.label}</span>
+              <span className="text-[10px] md:text-xs uppercase tracking-[0.2em] font-bold drop-shadow-sm">{role.label}</span>
             </motion.div>
           ))}
         </motion.div>
@@ -177,16 +186,6 @@ export default function App() {
             <div className="absolute inset-0 bg-[#D97757] transform scale-x-0 origin-left group-hover:scale-x-100 transition-transform duration-700 ease-[0.16,1,0.3,1]" />
           </a>
         </motion.footer>
-
-        {/* Scroll Indicator */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.3 }}
-          transition={{ delay: 2, duration: 1 }}
-          className="mt-16 md:mt-24 flex flex-col items-center gap-4"
-        >
-          <div className="w-px h-12 bg-gradient-to-b from-[#1A1C20] to-transparent" />
-        </motion.div>
 
       </motion.main>
     </div>
